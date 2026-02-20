@@ -52,8 +52,8 @@ const defaultTables: Table[] = ['10', '20', '21', '40', '41', '1', '2', '3'].map
 }));
 
 const defaultMenus: Menu[] = [
-  { id: 'm1', name: 'Menu Degustação Inverno', moments: ['Snacks', 'Entrada Fria', 'Entrada Quente', 'Prato Principal', 'Pré-Sobremesa', 'Sobremesa'], isActive: true },
-  { id: 'm2', name: 'Menu Vegetariano', moments: ['Snacks', 'Entrada', 'Prato Principal', 'Sobremesa'], isActive: false },
+  { id: 'm1', name: 'Menu 9 momentos', moments: ['Crocante de sementes & coalhada', 'Crocante de sementes & coalhada', 'Moluscos', 'Peixe', 'Verão', 'Carne', 'Arroz con leche', 'Bolo de milho & rosquilha de chocolate', 'Bolo de milho & rosquilha de chocolate'], isActive: true },
+  { id: 'm2', name: 'Menu 11 momentos', moments: ['Crocante de sementes & coalhada', 'Crocante de sementes & coalhada', 'Moluscos', 'Lagostim', 'Peixe', 'Verão', 'Carne', 'Texturas de abóbora', 'Arroz con leche', 'Bolo de milho & rosquilha de chocolate', 'Bolo de milho & rosquilha de chocolate'], isActive: true },
 ];
 
 const defaultPairings = ['Essencial', 'Gastronômico', 'À Carta', 'Sem Pearing'];
