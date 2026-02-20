@@ -38,7 +38,8 @@ interface StoreState {
   notifyVibration: () => void;
 }
 
-const defaultTables: Table[] = ['10', '20', '21', '40', '41', '1', '2', '3'].map((num) => ({
+// Added table 51 to default list
+const defaultTables: Table[] = ['10', '20', '21', '40', '41', '1', '2', '3', '51'].map((num) => ({
   id: `t-${num}`,
   number: num,
   menu: null,
