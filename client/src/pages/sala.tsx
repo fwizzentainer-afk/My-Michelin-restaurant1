@@ -107,7 +107,7 @@ export default function Sala() {
             // "table 51 positioned upper-right"
             
             // Round Tables
-            if (['10', '20', '21', '40', '41', '51'].includes(table.number)) {
+            if (['10', '20', '21', '40', '41'].includes(table.number)) {
               shapeClass += " rounded-full w-[12%] h-[12%] min-w-[50px] min-h-[50px] max-w-[80px] max-h-[80px]";
               
               if (table.number === '10') {
@@ -115,13 +115,11 @@ export default function Sala() {
               } else if (table.number === '20') {
                 positionClass = "top-[35%] left-[45%]";
               } else if (table.number === '21') {
-                positionClass = "top-[30%] left-[65%]";
-              } else if (table.number === '40') {
                 positionClass = "top-[55%] left-[30%]";
+              } else if (table.number === '40') {
+                positionClass = "top-[30%] left-[65%]";
               } else if (table.number === '41') {
                 positionClass = "top-[60%] left-[55%]";
-              } else if (table.number === '51') {
-                positionClass = "top-[15%] right-[25%]";
               }
             }
             
