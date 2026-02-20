@@ -7,14 +7,20 @@ import { Badge } from "@/components/ui/badge";
 export default function Cozinha() {
   const { tables, menus, updateTable } = useStore();
 
-  // Active tables in kitchen view are those that have a menu and are NOT strictly idle (they've started at least)
-  // Actually, kitchen needs to see anything preparing or ready, and maybe idle if it's currently on a moment > 0?
-  // Let's just show tables that have a menu selected.
-  const activeTables = tables.filter(t => t.menu !== null);
+  const activeTables = tables.filter(t => t.menu !== null && t.currentMoment > 0);
 
   const handleReady = (id: string) => {
-    updateTable(id, { status: 'ready' });
-    // Simulate vibration for Sala
+    const table = tables.find(t => t.id === id);
+    if (!table) return;
+
+    // Update readyTime for current moment
+    const updatedHistory = [...table.momentsHistory];
+    const currentIdx = updatedHistory.findIndex(h => h.momentNumber === table.currentMoment);
+    if (currentIdx !== -1) {
+      updatedHistory[currentIdx].readyTime = Date.now();
+    }
+
+    updateTable(id, { status: 'ready', momentsHistory: updatedHistory });
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
   };
 
@@ -22,7 +28,7 @@ export default function Cozinha() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground space-y-4">
         <Utensils className="w-16 h-16 opacity-20" />
-        <p className="text-xl font-serif tracking-widest uppercase">Nenhuma comanda ativa</p>
+        <p className="text-xl font-serif tracking-widest uppercase">Nenhuma comanda em andamento</p>
       </div>
     );
   }

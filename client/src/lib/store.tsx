@@ -5,6 +5,14 @@ export type Role = 'sala' | 'cozinha' | 'admin' | null;
 
 export type TableStatus = 'idle' | 'preparing' | 'ready' | 'paused';
 
+export interface MomentLog {
+  momentNumber: number;
+  momentName: string;
+  startTime: number | null; // time sala started (sent to cozinha)
+  readyTime: number | null; // time cozinha marked ready
+  finishTime: number | null; // time sala picked it up (started next moment or finished)
+}
+
 export interface Table {
   id: string;
   number: string;
@@ -15,6 +23,7 @@ export interface Table {
   totalMoments: number;
   startTime: number | null;
   lastMomentTime: number | null;
+  momentsHistory: MomentLog[];
 }
 
 export interface Menu {
@@ -24,21 +33,32 @@ export interface Menu {
   isActive: boolean;
 }
 
+export interface HistoricalService {
+  id: string;
+  tableNumber: string;
+  menuName: string;
+  pairing: string | null;
+  startTime: number;
+  endTime: number;
+  momentsHistory: MomentLog[];
+}
+
 interface StoreState {
   role: Role;
   tables: Table[];
   menus: Menu[];
   pairings: string[];
+  historicalLogs: HistoricalService[];
   login: (role: Role) => void;
   logout: () => void;
   updateTable: (id: string, updates: Partial<Table>) => void;
   createMenu: (menu: Omit<Menu, 'id'>) => void;
   updateMenu: (id: string, updates: Partial<Menu>) => void;
   deleteMenu: (id: string) => void;
+  finishService: (id: string) => void;
   notifyVibration: () => void;
 }
 
-// Added table 51 to default list
 const defaultTables: Table[] = ['10', '20', '21', '40', '41', '1', '2', '3'].map((num) => ({
   id: `t-${num}`,
   number: num,
@@ -49,6 +69,7 @@ const defaultTables: Table[] = ['10', '20', '21', '40', '41', '1', '2', '3'].map
   totalMoments: 0,
   startTime: null,
   lastMomentTime: null,
+  momentsHistory: [],
 }));
 
 const defaultMenus: Menu[] = [
@@ -64,12 +85,43 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<Role>(null);
   const [tables, setTables] = useState<Table[]>(defaultTables);
   const [menus, setMenus] = useState<Menu[]>(defaultMenus);
+  const [historicalLogs, setHistoricalLogs] = useState<HistoricalService[]>([]);
 
   const login = (newRole: Role) => setRole(newRole);
   const logout = () => setRole(null);
 
   const updateTable = (id: string, updates: Partial<Table>) => {
     setTables(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+  };
+
+  const finishService = (id: string) => {
+    setTables(prev => prev.map(t => {
+      if (t.id === id) {
+        if (t.startTime) {
+          setHistoricalLogs(logs => [...logs, {
+            id: `hist-${Date.now()}`,
+            tableNumber: t.number,
+            menuName: t.menu || '',
+            pairing: t.pairing,
+            startTime: t.startTime!,
+            endTime: Date.now(),
+            momentsHistory: t.momentsHistory
+          }]);
+        }
+        return {
+          ...t,
+          menu: null,
+          pairing: null,
+          status: 'idle',
+          currentMoment: 0,
+          totalMoments: 0,
+          startTime: null,
+          lastMomentTime: null,
+          momentsHistory: []
+        };
+      }
+      return t;
+    }));
   };
 
   const createMenu = (menu: Omit<Menu, 'id'>) => {
@@ -81,7 +133,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteMenu = (id: string) => {
-    // Prevent deleting active menus
     const menu = menus.find(m => m.id === id);
     if (menu?.isActive) return;
     setMenus(prev => prev.filter(m => m.id !== id));
@@ -95,8 +146,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <StoreContext.Provider value={{
-      role, tables, menus, pairings: defaultPairings,
-      login, logout, updateTable, createMenu, updateMenu, deleteMenu, notifyVibration
+      role, tables, menus, pairings: defaultPairings, historicalLogs,
+      login, logout, updateTable, createMenu, updateMenu, deleteMenu, finishService, notifyVibration
     }}>
       {children}
     </StoreContext.Provider>
