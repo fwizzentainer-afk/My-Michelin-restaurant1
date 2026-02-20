@@ -6,7 +6,7 @@ import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check } from
 import { Badge } from "@/components/ui/badge";
 
 export default function Sala() {
-  const { tables, menus, pairings, updateTable, finishService } = useStore();
+  const { tables, menus, pairings, updateTable, finishService, triggerNotification } = useStore();
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
 
   const selectedTable = tables.find(t => t.id === selectedTableId);
@@ -83,6 +83,9 @@ export default function Sala() {
       startTime: selectedTable.currentMoment === 0 ? now : selectedTable.startTime,
       momentsHistory: updatedHistory
     });
+
+    // Notify Cozinha
+    triggerNotification('cozinha', `Mesa ${selectedTable.number} - Próximo Momento`, `${momentName} está em preparo.`);
   };
 
   const handlePause = () => {

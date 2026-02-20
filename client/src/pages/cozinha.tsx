@@ -5,7 +5,7 @@ import { CheckCircle2, Utensils, Timer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function Cozinha() {
-  const { tables, menus, updateTable } = useStore();
+  const { tables, menus, updateTable, triggerNotification } = useStore();
 
   const activeTables = tables.filter(t => t.menu !== null && t.currentMoment > 0);
 
@@ -21,7 +21,9 @@ export default function Cozinha() {
     }
 
     updateTable(id, { status: 'ready', momentsHistory: updatedHistory });
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    
+    // Notify Sala
+    triggerNotification('sala', `Mesa ${table.number} - Pronto`, `O momento ${table.currentMoment} está pronto para ser servido.`);
   };
 
   if (activeTables.length === 0) {

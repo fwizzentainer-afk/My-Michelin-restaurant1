@@ -8,9 +8,9 @@ export type TableStatus = 'idle' | 'preparing' | 'ready' | 'paused';
 export interface MomentLog {
   momentNumber: number;
   momentName: string;
-  startTime: number | null; // time sala started (sent to cozinha)
-  readyTime: number | null; // time cozinha marked ready
-  finishTime: number | null; // time sala picked it up (started next moment or finished)
+  startTime: number | null; 
+  readyTime: number | null; 
+  finishTime: number | null; 
 }
 
 export interface Table {
@@ -57,6 +57,7 @@ interface StoreState {
   deleteMenu: (id: string) => void;
   finishService: (id: string) => void;
   notifyVibration: () => void;
+  triggerNotification: (targetRole: Role, title: string, body: string) => void;
 }
 
 const defaultTables: Table[] = ['10', '20', '21', '40', '41', '1', '2', '3'].map((num) => ({
@@ -87,67 +88,170 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [menus, setMenus] = useState<Menu[]>(defaultMenus);
   const [historicalLogs, setHistoricalLogs] = useState<HistoricalService[]>([]);
 
-  const login = (newRole: Role) => setRole(newRole);
+  // Setup BroadcastChannel for cross-tab synchronization and notifications
+  useEffect(() => {
+    const channel = new BroadcastChannel('michelin_sync');
+    
+    channel.onmessage = (event) => {
+      const { type, payload } = event.data;
+      if (type === 'SYNC_TABLES') {
+        setTables(payload);
+      } else if (type === 'SYNC_MENUS') {
+        setMenus(payload);
+      } else if (type === 'SYNC_LOGS') {
+        setHistoricalLogs(payload);
+      } else if (type === 'NOTIFICATION') {
+        const { targetRole, title, body } = payload;
+        if (role === targetRole) {
+          // Native push notification
+          if ("Notification" in window && Notification.permission === "granted") {
+            try {
+              // Service Worker registration is typically needed for mobile push, but standard Notification works in desktop/wearOS bridges
+              new Notification(title, { 
+                body, 
+                icon: '/favicon.png',
+                vibrate: [200, 100, 200, 100, 200],
+                tag: 'michelin-alert' // Groups notifications
+              });
+            } catch (e) {
+              console.error("Error firing notification", e);
+            }
+          }
+          notifyVibration();
+        }
+      }
+    };
+
+    return () => {
+      channel.close();
+    };
+  }, [role]);
+
+  const broadcast = (type: string, payload: any) => {
+    const channel = new BroadcastChannel('michelin_sync');
+    channel.postMessage({ type, payload });
+    channel.close();
+  };
+
+  const requestNotificationPermission = async () => {
+    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+      try {
+        await Notification.requestPermission();
+      } catch (e) {
+        console.error("Could not request notification permission", e);
+      }
+    }
+  };
+
+  const login = (newRole: Role) => {
+    setRole(newRole);
+    if (newRole === 'sala' || newRole === 'cozinha') {
+      requestNotificationPermission();
+    }
+  };
+
   const logout = () => setRole(null);
 
   const updateTable = (id: string, updates: Partial<Table>) => {
-    setTables(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    setTables(prev => {
+      const next = prev.map(t => t.id === id ? { ...t, ...updates } : t);
+      broadcast('SYNC_TABLES', next);
+      return next;
+    });
   };
 
   const finishService = (id: string) => {
-    setTables(prev => prev.map(t => {
-      if (t.id === id) {
-        if (t.startTime) {
-          setHistoricalLogs(logs => [...logs, {
-            id: `hist-${Date.now()}`,
-            tableNumber: t.number,
-            menuName: t.menu || '',
-            pairing: t.pairing,
-            startTime: t.startTime!,
-            endTime: Date.now(),
-            momentsHistory: t.momentsHistory
-          }]);
+    setTables(prev => {
+      const nextTables = prev.map(t => {
+        if (t.id === id) {
+          if (t.startTime) {
+            setHistoricalLogs(logs => {
+              const nextLogs = [...logs, {
+                id: `hist-${Date.now()}`,
+                tableNumber: t.number,
+                menuName: t.menu || '',
+                pairing: t.pairing,
+                startTime: t.startTime!,
+                endTime: Date.now(),
+                momentsHistory: t.momentsHistory
+              }];
+              broadcast('SYNC_LOGS', nextLogs);
+              return nextLogs;
+            });
+          }
+          return {
+            ...t,
+            menu: null,
+            pairing: null,
+            status: 'idle',
+            currentMoment: 0,
+            totalMoments: 0,
+            startTime: null,
+            lastMomentTime: null,
+            momentsHistory: []
+          };
         }
-        return {
-          ...t,
-          menu: null,
-          pairing: null,
-          status: 'idle',
-          currentMoment: 0,
-          totalMoments: 0,
-          startTime: null,
-          lastMomentTime: null,
-          momentsHistory: []
-        };
-      }
-      return t;
-    }));
+        return t;
+      });
+      broadcast('SYNC_TABLES', nextTables);
+      return nextTables;
+    });
   };
 
   const createMenu = (menu: Omit<Menu, 'id'>) => {
-    setMenus(prev => [...prev, { ...menu, id: `m${Date.now()}` }]);
+    setMenus(prev => {
+      const next = [...prev, { ...menu, id: `m${Date.now()}` }];
+      broadcast('SYNC_MENUS', next);
+      return next;
+    });
   };
 
   const updateMenu = (id: string, updates: Partial<Menu>) => {
-    setMenus(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
+    setMenus(prev => {
+      const next = prev.map(m => m.id === id ? { ...m, ...updates } : m);
+      broadcast('SYNC_MENUS', next);
+      return next;
+    });
   };
 
   const deleteMenu = (id: string) => {
-    const menu = menus.find(m => m.id === id);
-    if (menu?.isActive) return;
-    setMenus(prev => prev.filter(m => m.id !== id));
+    setMenus(prev => {
+      const menu = prev.find(m => m.id === id);
+      if (menu?.isActive) return prev;
+      const next = prev.filter(m => m.id !== id);
+      broadcast('SYNC_MENUS', next);
+      return next;
+    });
   };
 
   const notifyVibration = () => {
     if (navigator.vibrate) {
-      navigator.vibrate([200, 100, 200]);
+      navigator.vibrate([200, 100, 200, 100, 200]);
+    }
+  };
+
+  const triggerNotification = (targetRole: Role, title: string, body: string) => {
+    broadcast('NOTIFICATION', { targetRole, title, body });
+    // Also trigger locally if this device matches the target role
+    if (role === targetRole) {
+      if ("Notification" in window && Notification.permission === "granted") {
+        try {
+          new Notification(title, { 
+            body, 
+            icon: '/favicon.png',
+            vibrate: [200, 100, 200, 100, 200],
+            tag: 'michelin-alert'
+          });
+        } catch (e) {}
+      }
+      notifyVibration();
     }
   };
 
   return (
     <StoreContext.Provider value={{
       role, tables, menus, pairings: defaultPairings, historicalLogs,
-      login, logout, updateTable, createMenu, updateMenu, deleteMenu, finishService, notifyVibration
+      login, logout, updateTable, createMenu, updateMenu, deleteMenu, finishService, notifyVibration, triggerNotification
     }}>
       {children}
     </StoreContext.Provider>
