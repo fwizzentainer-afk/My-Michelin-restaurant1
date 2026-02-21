@@ -5,7 +5,7 @@
 
 @theme inline {
   --font-sans: "Inter", sans-serif;
-  --font-serif: "Playfair Display", serif;
+  --font-serif: "Inter", sans-serif;
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -72,10 +72,19 @@
     @apply border-border;
   }
   body {
-    @apply font-sans antialiased bg-background text-foreground selection:bg-primary/30;
+    @apply font-sans font-normal antialiased bg-background text-foreground selection:bg-primary/30;
     -webkit-tap-highlight-color: transparent;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-serif tracking-tight;
+    @apply font-sans font-semibold tracking-tight;
+  }
+  
+  /* Hierarchy helpers */
+  .text-subtitle {
+    @apply font-medium;
+  }
+  
+  .text-data {
+    @apply font-medium;
   }
 }
