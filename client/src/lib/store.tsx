@@ -60,7 +60,13 @@ interface StoreState {
   triggerNotification: (targetRole: Role, title: string, body: string) => void;
 }
 
-const defaultTables: Table[] = ['10', '20', '21', '40', '41', '1', '2', '3'].map((num) => ({
+// Updated table list based on the new floor plan
+const tableNumbers = [
+  '10', '11', '20', '21', '40', '41', '50', '1', '2', '3',
+  '51', '52', '53', '54', '55', '56', '57'
+];
+
+const defaultTables: Table[] = tableNumbers.map((num) => ({
   id: `t-${num}`,
   number: num,
   menu: null,
@@ -88,7 +94,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [menus, setMenus] = useState<Menu[]>(defaultMenus);
   const [historicalLogs, setHistoricalLogs] = useState<HistoricalService[]>([]);
 
-  // Setup BroadcastChannel for cross-tab synchronization and notifications
   useEffect(() => {
     const channel = new BroadcastChannel('michelin_sync');
     
@@ -103,15 +108,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       } else if (type === 'NOTIFICATION') {
         const { targetRole, title, body } = payload;
         if (role === targetRole) {
-          // Native push notification
           if ("Notification" in window && Notification.permission === "granted") {
             try {
-              // Service Worker registration is typically needed for mobile push, but standard Notification works in desktop/wearOS bridges
               new Notification(title, { 
                 body, 
                 icon: '/favicon.png',
                 vibrate: [200, 100, 200, 100, 200],
-                tag: 'michelin-alert' // Groups notifications
+                tag: 'michelin-alert'
               });
             } catch (e) {
               console.error("Error firing notification", e);
@@ -232,7 +235,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const triggerNotification = (targetRole: Role, title: string, body: string) => {
     broadcast('NOTIFICATION', { targetRole, title, body });
-    // Also trigger locally if this device matches the target role
     if (role === targetRole) {
       if ("Notification" in window && Notification.permission === "granted") {
         try {

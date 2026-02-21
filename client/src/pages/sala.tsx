@@ -12,7 +12,6 @@ export default function Sala() {
   const selectedTable = tables.find(t => t.id === selectedTableId);
   const activeMenus = menus.filter(m => m.isActive);
 
-  // Determine current step based on table state
   const getStep = (table: Table) => {
     if (!table.menu) return "menu";
     if (!table.pairing) return "pairing";
@@ -49,7 +48,6 @@ export default function Sala() {
     const nextMoment = selectedTable.currentMoment + 1;
     let updatedHistory = [...selectedTable.momentsHistory];
     
-    // Close previous moment's finishTime
     if (selectedTable.currentMoment > 0) {
       const prevIdx = updatedHistory.findIndex(h => h.momentNumber === selectedTable.currentMoment);
       if (prevIdx !== -1 && !updatedHistory[prevIdx].finishTime) {
@@ -58,13 +56,11 @@ export default function Sala() {
     }
 
     if (selectedTable.currentMoment >= selectedTable.totalMoments) {
-      // Finalize Table
       finishService(selectedTable.id);
       setSelectedTableId(null);
       return;
     }
 
-    // Start new moment
     const menuInfo = menus.find(m => m.name === selectedTable.menu);
     const momentName = menuInfo ? menuInfo.moments[nextMoment - 1] : `Momento ${nextMoment}`;
 
@@ -84,7 +80,6 @@ export default function Sala() {
       momentsHistory: updatedHistory
     });
 
-    // Notify Cozinha
     triggerNotification('cozinha', `Mesa ${selectedTable.number} - Próximo Momento`, `${momentName} está em preparo.`);
   };
 
@@ -96,7 +91,6 @@ export default function Sala() {
   };
 
   if (!selectedTableId) {
-    // Step 1: Select Table (Floor Plan Layout)
     return (
       <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto w-full">
         <div className="flex items-center justify-between border-b border-border/40 pb-2 mb-6">
@@ -123,8 +117,7 @@ export default function Sala() {
 
             let shapeClass = "flex items-center justify-center cursor-pointer transition-all duration-300 shadow-xl border-2 hover:scale-105 active:scale-95 absolute z-20";
             let colorClass = "border-border/30 bg-[#25262b] text-foreground hover:border-primary/40";
-            let positionClass = "";
-
+            
             if (isPreparing) {
               colorClass = "border-amber-500 bg-amber-500/10 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]";
             } else if (isReady) {
@@ -133,43 +126,43 @@ export default function Sala() {
               colorClass = "border-primary/60 bg-primary/10 text-primary shadow-[0_0_15px_rgba(212,175,55,0.15)]";
             }
 
-            if (['10', '20', '21', '40', '41'].includes(table.number)) {
+            const style: React.CSSProperties = {};
+
+            // Exact positioning based on user hand-drawn floor plan
+            if (['10', '11', '20', '21', '40', '41', '50'].includes(table.number)) {
               shapeClass += " rounded-full w-[12%] h-[12%] min-w-[50px] min-h-[50px] max-w-[80px] max-h-[80px]";
-              
-              if (table.number === '10') {
-                positionClass = "top-[25%] left-[20%]";
-              } else if (table.number === '20') {
-                positionClass = "top-[35%] left-[45%]";
-              } else if (table.number === '40') {
-                positionClass = "top-[55%] left-[30%]";
-              } else if (table.number === '21') {
-                positionClass = "top-[30%] left-[65%]";
-              } else if (table.number === '41') {
-                positionClass = "top-[60%] left-[55%]";
-              }
+              if (table.number === '10') { style.top = '45%'; style.left = '10%'; }
+              else if (table.number === '11') { style.top = '65%'; style.left = '12%'; }
+              else if (table.number === '20') { style.top = '35%'; style.left = '35%'; }
+              else if (table.number === '21') { style.top = '58%'; style.left = '33%'; }
+              else if (table.number === '40') { style.top = '35%'; style.left = '62%'; }
+              else if (table.number === '41') { style.top = '58%'; style.left = '60%'; }
+              else if (table.number === '50') { style.top = '12%'; style.left = '65%'; }
             }
             else if (['1', '2', '3'].includes(table.number)) {
               shapeClass += " rounded-lg w-[16%] h-[8%] min-w-[70px] min-h-[40px] max-w-[120px] max-h-[60px]";
-              
-              if (table.number === '1') {
-                positionClass = "bottom-[10%] left-[15%]";
-              } else if (table.number === '2') {
-                positionClass = "bottom-[10%] left-[40%]";
-              } else if (table.number === '3') {
-                positionClass = "bottom-[10%] left-[65%]";
-              }
+              style.bottom = '8%';
+              if (table.number === '1') { style.left = '15%'; }
+              else if (table.number === '2') { style.left = '40%'; }
+              else if (table.number === '3') { style.left = '65%'; }
+            }
+            else if (['51', '52', '53', '54', '55', '56', '57'].includes(table.number)) {
+              shapeClass += " rounded-sm w-[8%] h-[6%] min-w-[35px] min-h-[25px] max-w-[60px] max-h-[40px] transform -rotate-[15deg]";
+              const idx = parseInt(table.number) - 51;
+              style.right = '5%';
+              style.top = `${15 + (idx * 11)}%`;
             }
 
-            if (positionClass) {
+            if (Object.keys(style).length > 0) {
               return (
                 <div 
                   key={table.id}
-                  className={`${shapeClass} ${colorClass} ${positionClass}`}
+                  className={`${shapeClass} ${colorClass}`}
+                  style={style}
                   onClick={() => handleSelectTable(table.id)}
                   data-testid={`map-table-${table.number}`}
                 >
                   <span className="font-serif text-lg sm:text-xl font-medium tracking-tighter">{table.number}</span>
-                  
                   {hasActiveService && !isPreparing && !isReady && (
                     <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary rounded-full border-2 border-[#1a1b1e]" />
                   )}
@@ -184,18 +177,6 @@ export default function Sala() {
             }
             return null;
           })}
-
-          <div className="absolute top-[10%] right-[8%] bottom-[15%] w-[8%] flex flex-col justify-between items-center z-10">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-               <div 
-                 key={`deco-${i}`}
-                 className="w-full h-[12%] min-h-[25px] max-h-[45px] bg-[#141518] border border-white/5 rounded-sm transform -rotate-[15deg] shadow-lg flex items-center justify-center opacity-80"
-               >
-                 <div className="w-[80%] h-[20%] bg-white/5 rounded-full"></div>
-               </div>
-            ))}
-          </div>
-
         </div>
       </div>
     );
@@ -204,7 +185,6 @@ export default function Sala() {
   if (!selectedTable) return null;
 
   const step = getStep(selectedTable);
-  const isFinished = selectedTable.currentMoment > 0 && selectedTable.currentMoment >= selectedTable.totalMoments && selectedTable.status === 'ready'; // Actually if it reaches total moments it might wait to be finalized. Let's rely on currentMoment.
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto w-full animate-in fade-in duration-300">
