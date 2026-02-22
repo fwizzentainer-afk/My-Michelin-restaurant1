@@ -49,6 +49,9 @@ interface StoreState {
   menus: Menu[];
   pairings: string[];
   historicalLogs: HistoricalService[];
+  settings: {
+    soundEnabled: boolean;
+  };
   login: (role: Role) => void;
   logout: () => void;
   updateTable: (id: string, updates: Partial<Table>) => void;
@@ -58,9 +61,9 @@ interface StoreState {
   finishService: (id: string) => void;
   notifyVibration: () => void;
   triggerNotification: (targetRole: Role, title: string, body: string) => void;
+  updateSettings: (settings: Partial<StoreState['settings']>) => void;
 }
 
-// Updated table list based on the new floor plan
 const tableNumbers = [
   '10', '11', '20', '21', '40', '41', '50', '1', '2', '3',
   '51', '52', '53', '54', '55', '56', '57'
@@ -80,8 +83,8 @@ const defaultTables: Table[] = tableNumbers.map((num) => ({
 }));
 
 const defaultMenus: Menu[] = [
-  { id: 'm1', name: 'Menu 9 momentos', moments: ['Crocante de sementes & coalhada', 'Crocante de sementes & coalhada', 'Moluscos', 'Peixe', 'Verão', 'Carne', 'Arroz con leche', 'Bolo de milho & rosquilha de chocolate', 'Bolo de milho & rosquilha de chocolate'], isActive: true },
-  { id: 'm2', name: 'Menu 11 momentos', moments: ['Crocante de sementes & coalhada', 'Crocante de sementes & coalhada', 'Moluscos', 'Lagostim', 'Peixe', 'Verão', 'Carne', 'Texturas de abóbora', 'Arroz con leche', 'Bolo de milho & rosquilha de chocolate', 'Bolo de milho & rosquilha de chocolate'], isActive: true },
+  { id: 'm1', name: 'Menu 9 momentos', moments: ['Crocante de sementes & coalhada', 'Moluscos', 'Peixe', 'Verão', 'Carne', 'Arroz con leche', 'Bolo de milho & rosquilha de chocolate'], isActive: true },
+  { id: 'm2', name: 'Menu 11 momentos', moments: ['Crocante de sementes & coalhada', 'Moluscos', 'Lagostim', 'Peixe', 'Verão', 'Carne', 'Texturas de abóbora', 'Arroz con leche', 'Bolo de milho & rosquilha de chocolate'], isActive: true },
 ];
 
 const defaultPairings = ['Essencial', 'Gastronômico', 'À Carta', 'Sem Pearing'];
@@ -93,6 +96,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [tables, setTables] = useState<Table[]>(defaultTables);
   const [menus, setMenus] = useState<Menu[]>(defaultMenus);
   const [historicalLogs, setHistoricalLogs] = useState<HistoricalService[]>([]);
+  const [settings, setSettings] = useState({ soundEnabled: true });
 
   useEffect(() => {
     const channel = new BroadcastChannel('michelin_sync');
@@ -105,6 +109,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setMenus(payload);
       } else if (type === 'SYNC_LOGS') {
         setHistoricalLogs(payload);
+      } else if (type === 'SYNC_SETTINGS') {
+        setSettings(payload);
       } else if (type === 'NOTIFICATION') {
         const { targetRole, title, body } = payload;
         if (role === targetRole) {
@@ -121,6 +127,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             }
           }
           notifyVibration();
+          if (settings.soundEnabled) {
+            playNotificationSound();
+          }
         }
       }
     };
@@ -128,12 +137,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => {
       channel.close();
     };
-  }, [role]);
+  }, [role, settings.soundEnabled]);
 
   const broadcast = (type: string, payload: any) => {
     const channel = new BroadcastChannel('michelin_sync');
     channel.postMessage({ type, payload });
     channel.close();
+  };
+
+  const playNotificationSound = () => {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(440, audioContext.currentTime + 0.5);
+
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.5);
   };
 
   const requestNotificationPermission = async () => {
@@ -247,13 +275,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         } catch (e) {}
       }
       notifyVibration();
+      if (settings.soundEnabled) {
+        playNotificationSound();
+      }
     }
+  };
+
+  const updateSettings = (newSettings: Partial<StoreState['settings']>) => {
+    setSettings(prev => {
+      const next = { ...prev, ...newSettings };
+      broadcast('SYNC_SETTINGS', next);
+      return next;
+    });
   };
 
   return (
     <StoreContext.Provider value={{
-      role, tables, menus, pairings: defaultPairings, historicalLogs,
-      login, logout, updateTable, createMenu, updateMenu, deleteMenu, finishService, notifyVibration, triggerNotification
+      role, tables, menus, pairings: defaultPairings, historicalLogs, settings,
+      login, logout, updateTable, createMenu, updateMenu, deleteMenu, finishService, notifyVibration, triggerNotification, updateSettings
     }}>
       {children}
     </StoreContext.Provider>

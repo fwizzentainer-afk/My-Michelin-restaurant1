@@ -2,11 +2,20 @@ import { useState } from "react";
 import { useStore, Table } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check } from "lucide-react";
+import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check, Settings, Volume2, VolumeX, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function Sala() {
-  const { tables, menus, pairings, updateTable, finishService, triggerNotification } = useStore();
+  const { tables, menus, pairings, updateTable, finishService, triggerNotification, settings, updateSettings } = useStore();
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
 
   const selectedTable = tables.find(t => t.id === selectedTableId);
@@ -16,6 +25,17 @@ export default function Sala() {
     if (!table.menu) return "menu";
     if (!table.pairing) return "pairing";
     return "service";
+  };
+
+  const getMomentDisplay = (moment: number, total: number) => {
+    if (moment === 1) return "1&2";
+    if (moment === total) return `${total-1}&${total}`;
+    // Since we merged 1&2 into index 1, the moments are shifted
+    return moment + 1;
+  };
+
+  const getTotalMomentsDisplay = (total: number) => {
+    return total - 2; // Because we have two pairs
   };
 
   const handleSelectTable = (id: string) => setSelectedTableId(id);
@@ -90,11 +110,46 @@ export default function Sala() {
     });
   };
 
+  const handleForceFinish = () => {
+    if (!selectedTable) return;
+    finishService(selectedTable.id);
+    setSelectedTableId(null);
+  };
+
   if (!selectedTableId) {
     return (
       <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto w-full">
         <div className="flex items-center justify-between border-b border-border/40 pb-2 mb-6">
-          <h2 className="text-2xl font-serif text-primary">Mapa do Salão</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-serif text-primary">Mapa do Salão</h2>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary">
+                  <Settings className="w-5 h-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-border">
+                <DialogHeader>
+                  <DialogTitle className="font-serif text-primary">Configurações</DialogTitle>
+                </DialogHeader>
+                <div className="py-6 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {settings.soundEnabled ? <Volume2 className="w-5 h-5 text-primary" /> : <VolumeX className="w-5 h-5 text-muted-foreground" />}
+                      <div className="space-y-0.5">
+                        <Label>Alerta Sonoro</Label>
+                        <p className="text-xs text-muted-foreground">Toque de notificação ao receber alertas</p>
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={settings.soundEnabled} 
+                      onCheckedChange={(val) => updateSettings({ soundEnabled: val })} 
+                    />
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
           <div className="flex gap-3 text-[10px] sm:text-xs text-muted-foreground uppercase tracking-widest">
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-card border border-border" /> Livre</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary/10 border border-primary/50" /> Em Serviço</div>
@@ -128,7 +183,6 @@ export default function Sala() {
 
             const style: React.CSSProperties = {};
 
-            // Exact positioning based on user hand-drawn floor plan
             if (['10', '11', '20', '21', '40', '41', '50'].includes(table.number)) {
               shapeClass += " rounded-full w-[12%] h-[12%] min-w-[50px] min-h-[50px] max-w-[80px] max-h-[80px]";
               if (table.number === '10') { style.top = '45%'; style.left = '10%'; }
@@ -198,6 +252,28 @@ export default function Sala() {
             <h2 className="text-3xl font-serif text-primary">{selectedTable.number}</h2>
           </div>
         </div>
+
+        {selectedTable.menu && (
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10">
+                <XCircle className="w-6 h-6" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-card border-border">
+              <DialogHeader>
+                <DialogTitle className="text-destructive">Encerrar Mesa</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <p className="text-muted-foreground">Tem certeza que deseja encerrar o serviço da mesa {selectedTable.number} antecipadamente?</p>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button variant="outline" className="border-border">Cancelar</Button>
+                <Button variant="destructive" onClick={handleForceFinish}>Encerrar Serviço</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {step === "menu" && (
@@ -271,7 +347,8 @@ export default function Sala() {
                 
                 <span className="text-xs uppercase tracking-widest text-muted-foreground mb-3 relative z-10">Momento Atual</span>
                 <div className="text-6xl font-serif text-foreground mb-4 relative z-10 drop-shadow-md">
-                  {selectedTable.currentMoment} <span className="text-muted-foreground/50 text-4xl">/ {selectedTable.totalMoments}</span>
+                  {getMomentDisplay(selectedTable.currentMoment, selectedTable.totalMoments)} 
+                  <span className="text-muted-foreground/50 text-4xl"> / {getTotalMomentsDisplay(selectedTable.totalMoments)}</span>
                 </div>
                 
                 <div className="h-6 relative z-10">
@@ -309,7 +386,7 @@ export default function Sala() {
               {selectedTable.currentMoment >= selectedTable.totalMoments ? (
                 <Button 
                   className="flex-1 h-14 bg-emerald-600 text-white hover:bg-emerald-700 text-lg tracking-wide shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all"
-                  onClick={handleNextMoment}
+                  onClick={handleForceFinish}
                   data-testid="button-finish-service"
                 >
                   <Check className="w-5 h-5 mr-2" />
