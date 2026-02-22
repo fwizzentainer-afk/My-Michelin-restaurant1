@@ -24,6 +24,10 @@ export interface Table {
   startTime: number | null;
   lastMomentTime: number | null;
   momentsHistory: MomentLog[];
+  restrictions: {
+    type: 'alergia' | 'intolerancia' | 'gravidez' | null;
+    description: string;
+  };
 }
 
 export interface Menu {
@@ -80,6 +84,7 @@ const defaultTables: Table[] = tableNumbers.map((num) => ({
   startTime: null,
   lastMomentTime: null,
   momentsHistory: [],
+  restrictions: { type: null, description: '' }
 }));
 
 const defaultMenus: Menu[] = [
@@ -219,7 +224,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             totalMoments: 0,
             startTime: null,
             lastMomentTime: null,
-            momentsHistory: []
+            momentsHistory: [],
+            restrictions: { type: null, description: '' }
           };
         }
         return t;

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useStore, Table } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check, Settings, Volume2, VolumeX, XCircle, Utensils, UserCheck } from "lucide-react";
+import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check, Settings, Volume2, VolumeX, XCircle, Utensils, UserCheck, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { 
   Dialog, 
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function Sala() {
   const { tables, menus, pairings, updateTable, finishService, triggerNotification, settings, updateSettings } = useStore();
@@ -118,6 +119,13 @@ export default function Sala() {
     if (!selectedTable) return;
     finishService(selectedTable.id);
     setSelectedTableId(null);
+  };
+
+  const updateRestriction = (type: 'alergia' | 'intolerancia' | 'gravidez' | null, description: string) => {
+    if (!selectedTableId) return;
+    updateTable(selectedTableId, {
+      restrictions: { type, description }
+    });
   };
 
   if (!selectedTableId) {
@@ -230,6 +238,11 @@ export default function Sala() {
                   {isReady && (
                     <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[#1a1b1e] shadow-[0_0_8px_#10b981]" />
                   )}
+                  {table.restrictions.type && (
+                    <span className="absolute -bottom-1 -left-1 w-3.5 h-3.5 bg-destructive rounded-full border-2 border-[#1a1b1e] flex items-center justify-center">
+                      <AlertTriangle className="w-2 h-2 text-white" />
+                    </span>
+                  )}
                 </div>
               );
             }
@@ -258,27 +271,78 @@ export default function Sala() {
           </div>
         </div>
 
-        {selectedTable.menu && (
+        <div className="flex items-center gap-2">
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-10 w-10">
-                <XCircle className="w-6 h-6" />
+              <Button variant="outline" size="sm" className={`gap-2 h-10 border-border/40 ${selectedTable.restrictions.type ? 'bg-destructive/10 text-destructive border-destructive/20' : 'text-muted-foreground'}`}>
+                <AlertTriangle className="w-4 h-4" />
+                <span>Restrições</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-card border-border">
+            <DialogContent className="bg-card border-border sm:max-w-md">
               <DialogHeader>
-                <DialogTitle className="text-destructive">Encerrar Mesa</DialogTitle>
+                <DialogTitle className="font-serif text-primary flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" /> Restrições da Mesa {selectedTable.number}
+                </DialogTitle>
               </DialogHeader>
-              <div className="py-4">
-                <p className="text-muted-foreground">Tem certeza que deseja encerrar o serviço da mesa {selectedTable.number} antecipadamente?</p>
-              </div>
-              <div className="flex gap-3 justify-end">
-                <Button variant="outline" className="border-border">Cancelar</Button>
-                <Button variant="destructive" onClick={handleForceFinish}>Encerrar Serviço</Button>
+              <div className="py-6 space-y-6">
+                <div className="grid grid-cols-3 gap-3">
+                  <Button 
+                    variant={selectedTable.restrictions.type === 'alergia' ? 'default' : 'outline'}
+                    className={selectedTable.restrictions.type === 'alergia' ? 'bg-destructive hover:bg-destructive/90' : 'border-border'}
+                    onClick={() => updateRestriction('alergia', selectedTable.restrictions.description)}
+                  >Alergia</Button>
+                  <Button 
+                    variant={selectedTable.restrictions.type === 'intolerancia' ? 'default' : 'outline'}
+                    className={selectedTable.restrictions.type === 'intolerancia' ? 'bg-amber-600 hover:bg-amber-600/90' : 'border-border'}
+                    onClick={() => updateRestriction('intolerancia', selectedTable.restrictions.description)}
+                  >Intolerância</Button>
+                  <Button 
+                    variant={selectedTable.restrictions.type === 'gravidez' ? 'default' : 'outline'}
+                    className={selectedTable.restrictions.type === 'gravidez' ? 'bg-primary hover:bg-primary/90' : 'border-border'}
+                    onClick={() => updateRestriction('gravidez', selectedTable.restrictions.description)}
+                  >Gravidez</Button>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Descrição</Label>
+                  <Textarea 
+                    placeholder="Descreva a restrição detalhadamente..." 
+                    className="min-h-[100px] border-border bg-background/50"
+                    value={selectedTable.restrictions.description}
+                    onChange={(e) => updateRestriction(selectedTable.restrictions.type, e.target.value)}
+                  />
+                </div>
+                
+                {selectedTable.restrictions.type && (
+                  <Button variant="ghost" className="w-full text-muted-foreground" onClick={() => updateRestriction(null, '')}>Limpar Restrições</Button>
+                )}
               </div>
             </DialogContent>
           </Dialog>
-        )}
+
+          {selectedTable.menu && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-10 w-10">
+                  <XCircle className="w-6 h-6" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-border">
+                <DialogHeader>
+                  <DialogTitle className="text-destructive">Encerrar Mesa</DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                  <p className="text-muted-foreground">Tem certeza que deseja encerrar o serviço da mesa {selectedTable.number} antecipadamente?</p>
+                </div>
+                <div className="flex gap-3 justify-end">
+                  <Button variant="outline" className="border-border">Cancelar</Button>
+                  <Button variant="destructive" onClick={handleForceFinish}>Encerrar Serviço</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
 
       {step === "menu" && (
