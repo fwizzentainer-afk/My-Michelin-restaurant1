@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useStore, Table } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check, Settings, Volume2, VolumeX, XCircle } from "lucide-react";
+import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check, Settings, Volume2, VolumeX, XCircle, Utensils } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { 
   Dialog, 
@@ -28,14 +28,12 @@ export default function Sala() {
   };
 
   const getMomentDisplay = (moment: number, total: number) => {
+    if (moment === 0) return "0";
     if (moment === 1) return "1&2";
-    if (moment === total) return `${total-1}&${total}`;
-    // Since we merged 1&2 into index 1, the moments are shifted
+    if (moment === total) return `${total+1}&${total+2}`;
+    // The total parameter here is the number of steps in the moments array
+    // Since we group 2 at start and 2 at end, a menu of 9 moments has 7 steps
     return moment + 1;
-  };
-
-  const getTotalMomentsDisplay = (total: number) => {
-    return total - 2; // Because we have two pairs
   };
 
   const handleSelectTable = (id: string) => setSelectedTableId(id);
@@ -75,13 +73,20 @@ export default function Sala() {
       }
     }
 
-    if (selectedTable.currentMoment >= selectedTable.totalMoments) {
+    // Logic for ending: totalMoments is the array length.
+    // If we reach the end of steps, finish.
+    // Menu of 9 moments -> 7 steps.
+    const actualSteps = selectedTable.totalMoments - 2;
+    if (selectedTable.currentMoment >= actualSteps) {
       finishService(selectedTable.id);
       setSelectedTableId(null);
       return;
     }
 
     const menuInfo = menus.find(m => m.name === selectedTable.menu);
+    // When nextMoment is 1, it's the first step (1&2) which uses moment index 0
+    // When nextMoment is actualSteps, it's the last step (e.g. 8&9) which uses moment index 7 or 8?
+    // Let's simplify: momentName is just the name of the first item in the group or the specific item
     const momentName = menuInfo ? menuInfo.moments[nextMoment - 1] : `Momento ${nextMoment}`;
 
     updatedHistory.push({
@@ -124,7 +129,7 @@ export default function Sala() {
             <h2 className="text-2xl font-serif text-primary">Mapa do Salão</h2>
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary">
+                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary h-8 w-8">
                   <Settings className="w-5 h-5" />
                 </Button>
               </DialogTrigger>
@@ -239,6 +244,7 @@ export default function Sala() {
   if (!selectedTable) return null;
 
   const step = getStep(selectedTable);
+  const currentMomentName = selectedTable.momentsHistory.find(h => h.momentNumber === selectedTable.currentMoment)?.momentName;
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto w-full animate-in fade-in duration-300">
@@ -256,7 +262,7 @@ export default function Sala() {
         {selectedTable.menu && (
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10">
+              <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-10 w-10">
                 <XCircle className="w-6 h-6" />
               </Button>
             </DialogTrigger>
@@ -346,10 +352,17 @@ export default function Sala() {
                 )}
                 
                 <span className="text-xs uppercase tracking-widest text-muted-foreground mb-3 relative z-10">Momento Atual</span>
-                <div className="text-6xl font-serif text-foreground mb-4 relative z-10 drop-shadow-md">
+                <div className="text-6xl font-serif text-foreground mb-2 relative z-10 drop-shadow-md">
                   {getMomentDisplay(selectedTable.currentMoment, selectedTable.totalMoments)} 
-                  <span className="text-muted-foreground/50 text-4xl"> / {getTotalMomentsDisplay(selectedTable.totalMoments)}</span>
+                  <span className="text-muted-foreground/50 text-4xl"> / {selectedTable.totalMoments}</span>
                 </div>
+
+                {currentMomentName && (
+                  <div className="flex items-center gap-2 text-primary/80 mb-4 relative z-10">
+                    <Utensils className="w-4 h-4" />
+                    <span className="text-sm font-medium tracking-tight uppercase italic">{currentMomentName}</span>
+                  </div>
+                )}
                 
                 <div className="h-6 relative z-10">
                   {selectedTable.status === 'preparing' && (
@@ -383,7 +396,7 @@ export default function Sala() {
                 {selectedTable.status === 'paused' ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
               </Button>
               
-              {selectedTable.currentMoment >= selectedTable.totalMoments ? (
+              {selectedTable.currentMoment >= (selectedTable.totalMoments - 2) ? (
                 <Button 
                   className="flex-1 h-14 bg-emerald-600 text-white hover:bg-emerald-700 text-lg tracking-wide shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all"
                   onClick={handleForceFinish}
