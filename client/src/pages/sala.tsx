@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useStore, Table } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check, Settings, Volume2, VolumeX, XCircle, Utensils } from "lucide-react";
+import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check, Settings, Volume2, VolumeX, XCircle, Utensils, UserCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { 
   Dialog, 
@@ -23,6 +23,7 @@ export default function Sala() {
 
   const getStep = (table: Table) => {
     if (!table.menu) return "menu";
+    if (table.status === 'idle' && table.currentMoment === 0) return "seated";
     if (!table.pairing) return "pairing";
     return "service";
   };
@@ -30,9 +31,7 @@ export default function Sala() {
   const getMomentDisplay = (moment: number, total: number) => {
     if (moment === 0) return "0";
     if (moment === 1) return "1&2";
-    if (moment === total) return `${total+1}&${total+2}`;
-    // The total parameter here is the number of steps in the moments array
-    // Since we group 2 at start and 2 at end, a menu of 9 moments has 7 steps
+    if (moment === total - 1) return `${total-1}&${total}`;
     return moment + 1;
   };
 
@@ -54,6 +53,12 @@ export default function Sala() {
     });
   };
 
+  const handleSeated = () => {
+    if (!selectedTableId || !selectedTable) return;
+    triggerNotification('cozinha', `Mesa ${selectedTable.number} - Sentada`, `Mesa sentada com ${selectedTable.menu}. Aguardando pearing.`);
+    setSelectedTableId(null);
+  };
+
   const handleSelectPairing = (pairing: string) => {
     if (!selectedTableId) return;
     updateTable(selectedTableId, { pairing });
@@ -73,20 +78,14 @@ export default function Sala() {
       }
     }
 
-    // Logic for ending: totalMoments is the array length.
-    // If we reach the end of steps, finish.
-    // Menu of 9 moments -> 7 steps.
     const actualSteps = selectedTable.totalMoments - 2;
-    if (selectedTable.currentMoment >= actualSteps) {
+    if (selectedTable.currentMoment >= actualSteps + 1) {
       finishService(selectedTable.id);
       setSelectedTableId(null);
       return;
     }
 
     const menuInfo = menus.find(m => m.name === selectedTable.menu);
-    // When nextMoment is 1, it's the first step (1&2) which uses moment index 0
-    // When nextMoment is actualSteps, it's the last step (e.g. 8&9) which uses moment index 7 or 8?
-    // Let's simplify: momentName is just the name of the first item in the group or the specific item
     const momentName = menuInfo ? menuInfo.moments[nextMoment - 1] : `Momento ${nextMoment}`;
 
     updatedHistory.push({
@@ -299,6 +298,21 @@ export default function Sala() {
               </Button>
             ))}
           </div>
+        </div>
+      )}
+
+      {step === "seated" && (
+        <div className="space-y-4 animate-in slide-in-from-right-8 duration-500 flex flex-col items-center py-10">
+          <UserCheck className="w-16 h-16 text-primary mb-4 opacity-50" />
+          <h3 className="text-lg uppercase tracking-widest text-muted-foreground text-center mb-6">Mesa Selecionada: {selectedTable.menu}</h3>
+          <Button 
+            className="w-full h-16 bg-primary text-primary-foreground text-xl font-serif shadow-lg"
+            onClick={handleSeated}
+            data-testid="button-seated"
+          >
+            Seated
+          </Button>
+          <p className="mt-4 text-sm text-muted-foreground italic">Informa a cozinha que os clientes chegaram</p>
         </div>
       )}
 

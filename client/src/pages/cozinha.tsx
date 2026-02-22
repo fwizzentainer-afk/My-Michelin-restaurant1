@@ -118,7 +118,7 @@ export default function Cozinha() {
                   data-testid={`button-ready-${table.number}`}
                 >
                   <CheckCircle2 className="w-5 h-5 mr-2" />
-                  Pronto para Enviar
+                  Serviço
                 </Button>
               </CardFooter>
             </Card>
