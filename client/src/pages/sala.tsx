@@ -24,7 +24,15 @@ export default function Sala() {
 
   const getStep = (table: Table) => {
     if (!table.menu) return "menu";
-    if (table.status === 'idle' && table.currentMoment === 0) return "seated";
+    // If table has menu but no pairing AND is not already in 'seated' state (custom status check)
+    // We'll use 'idle' + currentMoment 0 to define the seated flow
+    if (table.status === 'idle' && table.currentMoment === 0 && !table.pairing) {
+      // If we just selected the menu, we show 'seated' button
+      // But if it was already clicked (notified), we should move to 'pairing'
+      // We can check if it's already "seated" by looking at momentsHistory or a flag
+      // Let's check if there's any history. If empty and status is idle, it's the "just picked menu" phase
+      if (table.momentsHistory.length === 0) return "seated";
+    }
     if (!table.pairing) return "pairing";
     return "service";
   };
@@ -48,7 +56,7 @@ export default function Sala() {
       totalMoments: menu.moments.length,
       currentMoment: 0,
       status: 'idle',
-      momentsHistory: [],
+      momentsHistory: [], // Initially empty
       startTime: null,
       lastMomentTime: null
     });
@@ -56,6 +64,21 @@ export default function Sala() {
 
   const handleSeated = () => {
     if (!selectedTableId || !selectedTable) return;
+    
+    // We add a dummy history entry or change status to "seated" (represented by a specific state)
+    // To allow the UI to progress to pairing, we add a mark in history or just update status
+    // Actually, let's just add a flag or a specific status if needed, but here we can just add a "seated" log
+    const now = Date.now();
+    updateTable(selectedTableId, {
+      momentsHistory: [{
+        momentNumber: -1, // Special ID for seated
+        momentName: 'Seated',
+        startTime: now,
+        readyTime: now,
+        finishTime: now
+      }]
+    });
+    
     triggerNotification('cozinha', `Mesa ${selectedTable.number} - Sentada`, `Mesa sentada com ${selectedTable.menu}. Aguardando pearing.`);
     setSelectedTableId(null);
   };
@@ -162,8 +185,9 @@ export default function Sala() {
               </DialogContent>
             </Dialog>
           </div>
-          <div className="flex gap-3 text-[10px] sm:text-xs text-muted-foreground uppercase tracking-widest">
+          <div className="flex flex-wrap gap-2 sm:gap-3 text-[9px] sm:text-xs text-muted-foreground uppercase tracking-widest justify-end">
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-card border border-border" /> Livre</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-600 border border-red-500" /> Sentada</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary/10 border border-primary/50" /> Em Serviço</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500/20 border border-amber-500" /> Prepara</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500" /> Pronto</div>
@@ -179,6 +203,7 @@ export default function Sala() {
 
           {tables.map(table => {
             const hasActiveService = table.menu && table.pairing;
+            const isSeated = table.menu && !table.pairing && table.momentsHistory.some(h => h.momentNumber === -1);
             const isPreparing = table.status === 'preparing';
             const isReady = table.status === 'ready';
 
@@ -191,6 +216,8 @@ export default function Sala() {
               colorClass = "border-emerald-500 bg-emerald-500/20 text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]";
             } else if (hasActiveService) {
               colorClass = "border-primary/60 bg-primary/10 text-primary shadow-[0_0_15px_rgba(212,175,55,0.15)]";
+            } else if (isSeated) {
+              colorClass = "border-red-500 bg-red-600/20 text-red-500 shadow-[0_0_15px_rgba(220,38,38,0.2)]";
             }
 
             const style: React.CSSProperties = {};
@@ -229,8 +256,8 @@ export default function Sala() {
                   data-testid={`map-table-${table.number}`}
                 >
                   <span className="font-serif text-lg sm:text-xl font-medium tracking-tighter">{table.number}</span>
-                  {hasActiveService && !isPreparing && !isReady && (
-                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary rounded-full border-2 border-[#1a1b1e]" />
+                  {(hasActiveService || isSeated) && !isPreparing && !isReady && (
+                    <span className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#1a1b1e] ${isSeated ? 'bg-red-500' : 'bg-primary'}`} />
                   )}
                   {isPreparing && (
                     <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full border-2 border-[#1a1b1e] animate-pulse" />
