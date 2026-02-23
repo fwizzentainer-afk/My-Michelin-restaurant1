@@ -32,11 +32,7 @@ export default function Sala() {
   const getMomentDisplay = (moment: number, total: number) => {
     if (moment === 0) return "0";
     if (moment === 1) return "1&2";
-    // We group the first two (1&2) and the last two.
-    // So for 9 moments, steps are: 1&2, 3, 4, 5, 6, 7, 8&9. Total 7 steps.
-    // The last step index is total - 2.
-    const lastStepIndex = total - 2;
-    if (moment === lastStepIndex) return `${total-1}&${total}`;
+    if (moment === total - 1) return `${total-1}&${total}`;
     return moment + 1;
   };
 
@@ -55,8 +51,8 @@ export default function Sala() {
       momentsHistory: [],
       startTime: null,
       lastMomentTime: null,
-      pax: 2,
-      language: 'PT'
+      pax: 2, // Default
+      language: 'PT' // Default
     });
   };
 
@@ -97,11 +93,8 @@ export default function Sala() {
       }
     }
 
-    // Number of steps: group(1&2) + middle + group(last-1&last)
-    // For 9: 1&2, 3, 4, 5, 6, 7, 8&9 (7 steps)
-    // For 11: 1&2, 3, 4, 5, 6, 7, 8, 9, 10&11 (9 steps)
-    const totalSteps = selectedTable.totalMoments - 2;
-    if (selectedTable.currentMoment >= totalSteps) {
+    const actualSteps = selectedTable.totalMoments - 2;
+    if (selectedTable.currentMoment >= actualSteps + 1) {
       finishService(selectedTable.id);
       setSelectedTableId(null);
       return;

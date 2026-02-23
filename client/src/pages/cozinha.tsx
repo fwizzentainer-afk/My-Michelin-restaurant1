@@ -135,14 +135,12 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table, onRea
               {table.number}
             </div>
             <div>
-              <CardTitle className="text-lg font-serif leading-tight">{table.menu}</CardTitle>
-              <div className="flex items-center gap-4 mt-1">
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest whitespace-nowrap">
-                  {table.pairing || 'Aguardando Pairing'}
-                </p>
-                <div className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1.5 whitespace-nowrap">
+              <CardTitle className="text-lg font-serif">{table.menu}</CardTitle>
+              <div className="flex items-center justify-between gap-4 w-full">
+                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">{table.pairing || 'Aguardando Pairing'}</p>
+                <div className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-2">
                   <span className="text-primary">{table.pax} PAX</span>
-                  <span className="opacity-30">|</span>
+                  <span>-</span>
                   <span className="text-primary">{table.language}</span>
                 </div>
               </div>
