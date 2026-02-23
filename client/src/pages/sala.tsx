@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useStore, Table } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check, Settings, Volume2, VolumeX, XCircle, Utensils, UserCheck, AlertTriangle } from "lucide-react";
+import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check, Settings, Volume2, VolumeX, XCircle, Utensils, UserCheck, AlertTriangle, Languages, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { 
   Dialog, 
@@ -24,15 +24,7 @@ export default function Sala() {
 
   const getStep = (table: Table) => {
     if (!table.menu) return "menu";
-    // If table has menu but no pairing AND is not already in 'seated' state (custom status check)
-    // We'll use 'idle' + currentMoment 0 to define the seated flow
-    if (table.status === 'idle' && table.currentMoment === 0 && !table.pairing) {
-      // If we just selected the menu, we show 'seated' button
-      // But if it was already clicked (notified), we should move to 'pairing'
-      // We can check if it's already "seated" by looking at momentsHistory or a flag
-      // Let's check if there's any history. If empty and status is idle, it's the "just picked menu" phase
-      if (table.momentsHistory.length === 0) return "seated";
-    }
+    if (table.status === 'idle' && table.currentMoment === 0 && table.momentsHistory.length === 0) return "seated";
     if (!table.pairing) return "pairing";
     return "service";
   };
@@ -56,22 +48,21 @@ export default function Sala() {
       totalMoments: menu.moments.length,
       currentMoment: 0,
       status: 'idle',
-      momentsHistory: [], // Initially empty
+      momentsHistory: [],
       startTime: null,
-      lastMomentTime: null
+      lastMomentTime: null,
+      pax: 2, // Default
+      language: 'PT' // Default
     });
   };
 
   const handleSeated = () => {
     if (!selectedTableId || !selectedTable) return;
     
-    // We add a dummy history entry or change status to "seated" (represented by a specific state)
-    // To allow the UI to progress to pairing, we add a mark in history or just update status
-    // Actually, let's just add a flag or a specific status if needed, but here we can just add a "seated" log
     const now = Date.now();
     updateTable(selectedTableId, {
       momentsHistory: [{
-        momentNumber: -1, // Special ID for seated
+        momentNumber: -1,
         momentName: 'Seated',
         startTime: now,
         readyTime: now,
@@ -79,7 +70,7 @@ export default function Sala() {
       }]
     });
     
-    triggerNotification('cozinha', `Mesa ${selectedTable.number} - Sentada`, `Mesa sentada com ${selectedTable.menu}. Aguardando pearing.`);
+    triggerNotification('cozinha', `Mesa ${selectedTable.number} - Sentada`, `Mesa sentada (${selectedTable.pax} PAX, ${selectedTable.language}) com ${selectedTable.menu}.`);
     setSelectedTableId(null);
   };
 
@@ -149,6 +140,16 @@ export default function Sala() {
     updateTable(selectedTableId, {
       restrictions: { type, description }
     });
+  };
+
+  const updatePax = (pax: number) => {
+    if (!selectedTableId) return;
+    updateTable(selectedTableId, { pax });
+  };
+
+  const updateLanguage = (lang: string) => {
+    if (!selectedTableId) return;
+    updateTable(selectedTableId, { language: lang });
   };
 
   if (!selectedTableId) {
@@ -393,17 +394,60 @@ export default function Sala() {
       )}
 
       {step === "seated" && (
-        <div className="space-y-4 animate-in slide-in-from-right-8 duration-500 flex flex-col items-center py-10">
-          <UserCheck className="w-16 h-16 text-primary mb-4 opacity-50" />
-          <h3 className="text-lg uppercase tracking-widest text-muted-foreground text-center mb-6">Mesa Selecionada: {selectedTable.menu}</h3>
-          <Button 
-            className="w-full h-16 bg-primary text-primary-foreground text-xl font-serif shadow-lg"
-            onClick={handleSeated}
-            data-testid="button-seated"
-          >
-            Seated
-          </Button>
-          <p className="mt-4 text-sm text-muted-foreground italic">Informa a cozinha que os clientes chegaram</p>
+        <div className="space-y-8 animate-in slide-in-from-right-8 duration-500 flex flex-col py-6">
+          <div className="bg-card/40 border border-border/40 rounded-xl p-6 space-y-6 shadow-sm">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-primary">
+                <Users className="w-5 h-5" />
+                <Label className="text-sm uppercase tracking-widest font-bold">Número de PAX</Label>
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
+                  <Button 
+                    key={n}
+                    variant={selectedTable.pax === n ? 'default' : 'outline'}
+                    className={`h-12 text-lg font-serif ${selectedTable.pax === n ? 'bg-primary' : 'border-border/40 hover:border-primary/40'}`}
+                    onClick={() => updatePax(n)}
+                  >
+                    {n}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-primary">
+                <Languages className="w-5 h-5" />
+                <Label className="text-sm uppercase tracking-widest font-bold">Idioma</Label>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {['PT', 'ES', 'ING'].map(lang => (
+                  <Button 
+                    key={lang}
+                    variant={selectedTable.language === lang ? 'default' : 'outline'}
+                    className={`h-12 text-sm font-bold tracking-widest ${selectedTable.language === lang ? 'bg-primary' : 'border-border/40 hover:border-primary/40'}`}
+                    onClick={() => updateLanguage(lang)}
+                  >
+                    {lang}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center pt-4">
+            <Button 
+              className="w-full h-16 bg-primary text-primary-foreground text-xl font-serif shadow-lg group"
+              onClick={handleSeated}
+              data-testid="button-seated"
+            >
+              <UserCheck className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" />
+              Seated
+            </Button>
+            <p className="mt-4 text-xs text-muted-foreground uppercase tracking-widest opacity-60">
+              Mesa {selectedTable.number} • {selectedTable.menu}
+            </p>
+          </div>
         </div>
       )}
 
@@ -433,8 +477,13 @@ export default function Sala() {
             <CardHeader className="pb-4 border-b border-border/20">
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="font-serif text-2xl text-primary">{selectedTable.menu}</CardTitle>
-                  <p className="text-sm text-muted-foreground uppercase tracking-wider mt-1">{selectedTable.pairing}</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <CardTitle className="font-serif text-2xl text-primary">{selectedTable.menu}</CardTitle>
+                    <Badge variant="outline" className="text-[10px] h-5 border-primary/20 text-primary/80">
+                      {selectedTable.pax} PAX • {selectedTable.language}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground uppercase tracking-wider">{selectedTable.pairing}</p>
                 </div>
                 <Badge variant={
                   selectedTable.status === 'ready' ? 'default' : 

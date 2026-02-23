@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 export default function Cozinha() {
   const { tables, menus, updateTable, triggerNotification } = useStore();
   
-  const activeTables = tables.filter(t => t.menu && (t.currentMoment > 0 || (t.status === 'idle' && t.menu)));
+  const activeTables = tables.filter(t => t.menu && (t.currentMoment > 0 || t.momentsHistory.some(h => h.momentNumber === -1)));
   const preparingTables = activeTables.filter(t => t.status === 'preparing');
   const readyTables = activeTables.filter(t => t.status === 'ready');
 
@@ -127,7 +127,7 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table, onRea
       )}
 
       <CardHeader className="pb-4 border-b border-border/20">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-1">
           <div className="flex items-center gap-3">
             <div className={`w-12 h-12 rounded-full flex items-center justify-center font-serif text-2xl border-2 ${
               table.status === 'ready' ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-primary text-primary-foreground border-primary/50'
@@ -136,15 +136,16 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table, onRea
             </div>
             <div>
               <CardTitle className="text-lg font-serif">{table.menu}</CardTitle>
-              <p className="text-[10px] uppercase text-muted-foreground tracking-widest">{table.pairing || 'Aguardando Pairing'}</p>
+              <div className="flex items-center justify-between gap-4 w-full">
+                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">{table.pairing || 'Aguardando Pairing'}</p>
+                <div className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-2">
+                  <span className="text-primary">{table.pax} PAX</span>
+                  <span>-</span>
+                  <span className="text-primary">{table.language}</span>
+                </div>
+              </div>
             </div>
           </div>
-          {table.status === 'preparing' && (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-background/50 rounded-md border border-border/40">
-              <Timer className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-xs font-medium font-mono text-amber-500">{formatTime(elapsed)}</span>
-            </div>
-          )}
         </div>
       </CardHeader>
       

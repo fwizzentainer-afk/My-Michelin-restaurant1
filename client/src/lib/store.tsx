@@ -18,6 +18,8 @@ export interface Table {
   number: string;
   menu: string | null;
   pairing: string | null;
+  pax: number | null;
+  language: string | null;
   status: TableStatus;
   currentMoment: number;
   totalMoments: number;
@@ -78,6 +80,8 @@ const defaultTables: Table[] = tableNumbers.map((num) => ({
   number: num,
   menu: null,
   pairing: null,
+  pax: null,
+  language: null,
   status: 'idle',
   currentMoment: 0,
   totalMoments: 0,
@@ -219,6 +223,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             ...t,
             menu: null,
             pairing: null,
+            pax: null,
+            language: null,
             status: 'idle',
             currentMoment: 0,
             totalMoments: 0,
