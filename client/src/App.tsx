@@ -67,7 +67,22 @@ function Router() {
 }
 
 function App() {
-  return (
+  useEffect(() => {
+  console.log("Socket iniciado:", socket);
+
+  socket.on("connect", () => {
+    console.log("Conectado ao servidor:", socket.id);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Desconectado do servidor");
+  });
+
+  return () => {
+    socket.disconnect();
+  };
+}, []);
+ return (
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
         <TooltipProvider>
@@ -75,8 +90,8 @@ function App() {
           <Router />
         </TooltipProvider>
       </StoreProvider>
-    </QueryClientProvider>
-  );
+    </QueryClientProvider> 
+   );
 }
 
 export default App;
