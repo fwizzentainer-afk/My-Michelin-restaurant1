@@ -1,3 +1,4 @@
+import socket from "./socket";
 import { Switch, Route, useLocation } from "wouter";
 import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
@@ -33,6 +34,19 @@ function ProtectedRoute({ component: Component, allowedRole }: { component: any,
 }
 
 function Router() {
+  useEffect(() => {
+  socket.on("connect", () => {
+    console.log("Conectado ao servidor:", socket.id);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Desconectado do servidor");
+  });
+
+  return () => {
+    socket.disconnect();
+  };
+}, []);
   return (
     <Layout>
       <Switch>
