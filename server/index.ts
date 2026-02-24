@@ -1,3 +1,4 @@
+import path from "path"
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -24,10 +25,17 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("Dispositivo desconectado");
   });
+}); // Servir React build
+const __dirname = path.resolve();
+
+app.use(express.static(path.join(__dirname, "client/dist")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "client/dist/index.html"));
 });
 
-app.get("/", (req, res) => {
-  res.send("Servidor funcionando 🚀");
+httpServer.listen(process.env.PORT || 3000, () => {
+  console.log("Servidor rodando");
 });
 
 httpServer.listen(process.env.PORT || 3000, () => {
