@@ -1,4 +1,4 @@
-import path from "path"
+import path from "path";
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -30,14 +30,15 @@ const __dirname = path.resolve();
 
 app.use(express.static(path.join(__dirname, "client/dist")));
 
-app.get("*", (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, "client/dist/index.html"));
 });
 
 httpServer.listen(process.env.PORT || 3000, () => {
   console.log("Servidor rodando");
 });
+const PORT = process.env.PORT;
 
-httpServer.listen(process.env.PORT || 3000, () => {
-  console.log("Servidor rodando");
+httpServer.listen(PORT, "0.0.0.0", () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
