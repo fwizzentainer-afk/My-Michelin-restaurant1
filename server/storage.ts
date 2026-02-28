@@ -33,16 +33,6 @@ export class MemStorage implements IStorage {
     this.users.set(id, user);
     return user;
   }
-}private orders: Order[] = [];
-
-async getOrders(): Promise<Order[]> {
-  return this.orders;
 }
-
-async createOrder(order: Order): Promise<Order> {
-  this.orders.push(order);
-  return order;
-}
-
 
 export const storage = new MemStorage();

@@ -34,19 +34,6 @@ function ProtectedRoute({ component: Component, allowedRole }: { component: any,
 }
 
 function Router() {
-  useEffect(() => {
-  socket.on("connect", () => {
-    console.log("Conectado ao servidor:", socket.id);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("Desconectado do servidor");
-  });
-
-  return () => {
-    socket.disconnect();
-  };
-}, []);
   return (
     <Layout>
       <Switch>
@@ -68,21 +55,22 @@ function Router() {
 
 function App() {
   useEffect(() => {
-  console.log("Socket iniciado:", socket);
+    console.log("Socket iniciado:", socket);
 
-  socket.on("connect", () => {
-    console.log("Conectado ao servidor:", socket.id);
-  });
+    socket.on("connect", () => {
+      console.log("Conectado ao servidor:", socket.id);
+    });
 
-  socket.on("disconnect", () => {
-    console.log("Desconectado do servidor");
-  });
+    socket.on("disconnect", () => {
+      console.log("Desconectado do servidor");
+    });
 
-  return () => {
-    socket.disconnect();
-  };
-}, []);
- return (
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+  
+  return (
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
         <TooltipProvider>

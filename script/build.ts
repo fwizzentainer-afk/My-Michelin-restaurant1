@@ -30,6 +30,8 @@ const allowlist = [
   "xlsx",
   "zod",
   "zod-validation-error",
+  "vite",
+  "socket.io",
 ];
 
 async function buildAll() {
@@ -52,10 +54,7 @@ async function buildAll() {
     bundle: true,
     format: "cjs",
     outfile: "dist/index.cjs",
-    define: {
-      "process.env.NODE_ENV": '"production"',
-    },
-    minify: true,
+    target: "node18",
     external: externals,
     logLevel: "info",
   });
