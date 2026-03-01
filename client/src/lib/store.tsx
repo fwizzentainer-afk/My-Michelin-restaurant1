@@ -50,7 +50,7 @@ export interface HistoricalService {
 }
 
 interface StoreState {
-  role: Role;
+  role: Role | null;
   tables: Table[];
   menus: Menu[];
   pairings: string[];
@@ -58,15 +58,14 @@ interface StoreState {
   settings: {
     soundEnabled: boolean;
   };
-  login: (role: Role) => void;
+  login: (role: Role | null) => void;
   logout: () => void;
   updateTable: (id: string, updates: Partial<Table>) => void;
   createMenu: (menu: Omit<Menu, 'id'>) => void;
   updateMenu: (id: string, updates: Partial<Menu>) => void;
   deleteMenu: (id: string) => void;
   finishService: (id: string) => void;
-  notifyVibration: () => void;
-  triggerNotification: (targetRole: Role, title: string, body: string) => void;
+  triggerNotification: (targetRole: Role | null, title: string, body: string) => void;
   updateSettings: (settings: Partial<StoreState['settings']>) => void;
 }
 
@@ -101,7 +100,7 @@ const defaultPairings = ['Essencial', 'Gastronômico', 'À Carta', 'Sem Pearing'
 const StoreContext = createContext<StoreState | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [role, setRole] = useState<Role>(null);
+  const [role, setRole] = useState<Role | null>(null);
   const [tables, setTables] = useState<Table[]>(defaultTables);
   const [menus, setMenus] = useState<Menu[]>(defaultMenus);
   const [historicalLogs, setHistoricalLogs] = useState<HistoricalService[]>([]);
@@ -128,14 +127,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               new Notification(title, { 
                 body, 
                 icon: '/favicon.png',
-                vibrate: [200, 100, 200, 100, 200],
                 tag: 'michelin-alert'
               });
             } catch (e) {
               console.error("Error firing notification", e);
             }
           }
-          notifyVibration();
           if (settings.soundEnabled) {
             playNotificationSound();
           }
@@ -225,14 +222,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             pairing: null,
             pax: null,
             language: null,
-            status: 'idle',
+            status: 'idle' as TableStatus,
             currentMoment: 0,
             totalMoments: 0,
             startTime: null,
             lastMomentTime: null,
             momentsHistory: [],
             restrictions: { type: null, description: '' }
-          };
+          } as Table;
         }
         return t;
       });
@@ -267,11 +264,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const notifyVibration = () => {
-    if (navigator.vibrate) {
-      navigator.vibrate([200, 100, 200, 100, 200]);
-    }
-  };
 
   const triggerNotification = (targetRole: Role, title: string, body: string) => {
     broadcast('NOTIFICATION', { targetRole, title, body });
@@ -281,12 +273,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           new Notification(title, { 
             body, 
             icon: '/favicon.png',
-            vibrate: [200, 100, 200, 100, 200],
             tag: 'michelin-alert'
           });
         } catch (e) {}
       }
-      notifyVibration();
       if (settings.soundEnabled) {
         playNotificationSound();
       }
@@ -304,7 +294,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   return (
     <StoreContext.Provider value={{
       role, tables, menus, pairings: defaultPairings, historicalLogs, settings,
-      login, logout, updateTable, createMenu, updateMenu, deleteMenu, finishService, notifyVibration, triggerNotification, updateSettings
+      login, logout, updateTable, createMenu, updateMenu, deleteMenu, finishService, triggerNotification, updateSettings
     }}>
       {children}
     </StoreContext.Provider>
