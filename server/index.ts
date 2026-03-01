@@ -123,7 +123,17 @@ async function setupProduction() {
   console.log(`Arquivos estáticos servidos de ${distPath}`);
 }
 
+let serverStarted = false;
+
 async function startServer() {
+  // `startServer` may be called more than once in some hot-reload/dev setups
+  // which would lead to the "already listen" error. Guard against that here.
+  if (serverStarted) {
+    console.warn("startServer called again; ignoring");
+    return;
+  }
+  serverStarted = true;
+
   try {
     await setupRoutes();
 
@@ -133,9 +143,11 @@ async function startServer() {
       await setupProduction();
     }
 
-    httpServer.listen(PORT, "0.0.0.0", () => {
-      console.log(`Servidor rodando na porta ${PORT}${isDev ? " (desenvolvimento)" : " (produção)"}`);
-    });
+    if (!httpServer.listening) {
+      httpServer.listen(PORT, "0.0.0.0", () => {
+        console.log(`Servidor rodando na porta ${PORT}${isDev ? " (desenvolvimento)" : " (produção)"}`);
+      });
+    }
 
     // Graceful shutdown
     process.on("SIGTERM", () => {
