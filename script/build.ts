@@ -30,7 +30,6 @@ const allowlist = [
   "xlsx",
   "zod",
   "zod-validation-error",
-  "vite",
   "socket.io",
 ];
 
@@ -46,7 +45,12 @@ async function buildAll() {
     ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.devDependencies || {}),
   ];
-  const externals = allDeps.filter((dep) => !allowlist.includes(dep));
+
+  // build-time externals: everything not in our allowlist plus local config files
+  const externals = allDeps
+    .filter((dep) => !allowlist.includes(dep))
+    // make sure we don't accidentally bundle the vite config or other build-time files
+    .concat(["../vite.config.js", "./vite.config.js", "vite.config.js"]);
 
   await esbuild({
     entryPoints: ["server/index.ts"],
