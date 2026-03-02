@@ -24,7 +24,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-inter text-lg font-semibold tracking-tight text-primary">
+            <span className="font-serif text-lg font-semibold tracking-tight text-primary">
               My Michelin Restaurant
             </span>
           </div>
@@ -61,7 +61,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] border-border/40 bg-card">
               <DialogHeader>
-                <DialogTitle className="font-inter text-2xl text-primary">My Michelin Restaurant</DialogTitle>
+                <DialogTitle className="font-serif text-2xl text-primary">My Michelin Restaurant</DialogTitle>
               </DialogHeader>
               <div className="flex flex-col gap-4 py-4 text-sm text-muted-foreground">
                 <div className="grid grid-cols-3 gap-2 border-b border-border/40 pb-2">

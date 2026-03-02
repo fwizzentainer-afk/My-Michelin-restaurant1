@@ -31,12 +31,9 @@ export default function Sala() {
 
   const getMomentDisplay = (moment: number, total: number) => {
     if (moment === 0) return "0";
-    const menu = menus.find(m => m.name === selectedTable?.menu);
-    if (menu?.displayMoments?.length) {
-      const realMoment = menu.displayMoments[moment - 1] ?? moment;
-      return String(realMoment);
-    }
-    return String(moment);
+    if (moment === 1) return "1&2";
+    if (moment === total - 1) return `${total-1}&${total}`;
+    return moment + 1;
   };
 
   const handleSelectTable = (id: string) => setSelectedTableId(id);
@@ -48,7 +45,7 @@ export default function Sala() {
     
     updateTable(selectedTableId, { 
       menu: menu.name,
-      totalMoments: Math.max(...menu.displayMoments, menu.moments.length),
+      totalMoments: menu.moments.length,
       currentMoment: 0,
       status: 'idle',
       momentsHistory: [],
@@ -96,15 +93,14 @@ export default function Sala() {
       }
     }
 
-    const menuInfo = menus.find(m => m.name === selectedTable.menu);
-    const editableSteps = menuInfo?.moments.length || 0;
-
-    if (selectedTable.currentMoment >= editableSteps) {
+    const actualSteps = selectedTable.totalMoments - 2;
+    if (selectedTable.currentMoment >= actualSteps + 1) {
       finishService(selectedTable.id);
       setSelectedTableId(null);
       return;
     }
 
+    const menuInfo = menus.find(m => m.name === selectedTable.menu);
     const momentName = menuInfo ? menuInfo.moments[nextMoment - 1] : `Momento ${nextMoment}`;
 
     updatedHistory.push({

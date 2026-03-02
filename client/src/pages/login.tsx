@@ -62,7 +62,7 @@ export default function Login() {
             <UtensilsCrossed className="w-8 h-8 text-primary" />
           </div>
           <div>
-            <CardTitle className="font-inter text-3xl mb-2 text-foreground">Acesso ao Sistema</CardTitle>
+            <CardTitle className="font-serif text-3xl mb-2 text-foreground">Acesso ao Sistema</CardTitle>
             <CardDescription className="text-muted-foreground tracking-wide uppercase text-xs">
               My Michelin Restaurant
             </CardDescription>
@@ -81,7 +81,7 @@ export default function Login() {
                 <UtensilsCrossed className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left flex-1">
-                <span className="font-inter text-xl block">Sala</span>
+                <span className="font-serif text-xl block">Sala</span>
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Máx. 5 Dispositivos</span>
               </div>
             </Button>
@@ -96,7 +96,7 @@ export default function Login() {
                 <ChefHat className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left flex-1">
-                <span className="font-inter text-xl block">Cozinha</span>
+                <span className="font-serif text-xl block">Cozinha</span>
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Máx. 2 Dispositivos</span>
               </div>
             </Button>
@@ -111,7 +111,7 @@ export default function Login() {
                 <Shield className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left flex-1">
-                <span className="font-inter text-xl block">Admin</span>
+                <span className="font-serif text-xl block">Admin</span>
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Gestão do Sistema</span>
               </div>
             </Button>

@@ -16,15 +16,6 @@ export async function registerRoutes(
   app: Express,
 ): Promise<Server> {
   const router = express.Router();
-  const sanitizeUser = (user: {
-    id: string;
-    username: string;
-    role: string;
-  }) => ({
-    id: user.id,
-    username: user.username,
-    role: user.role,
-  });
 
   const requireAuth: express.RequestHandler = (req, res, next) => {
     if (!req.session.userId) {
@@ -66,21 +57,13 @@ export async function registerRoutes(
 
     req.session.userId = user.id;
     req.session.role = user.role as "admin" | "sala" | "cozinha";
-    res.json(sanitizeUser(user));
+    res.json({ id: user.id, username: user.username, role: user.role });
   });
 
   router.post("/logout", requireAuth, (req, res) => {
     req.session.destroy(() => {
       res.status(204).end();
     });
-  });
-
-  router.get("/users", requireAdmin, async (_req, res) => {
-    const users = await storage.listUsers();
-    const safeUsers = users
-      .map(sanitizeUser)
-      .sort((a, b) => a.username.localeCompare(b.username));
-    res.json(safeUsers);
   });
 
   // Create user
@@ -96,49 +79,14 @@ export async function registerRoutes(
     }
 
     const user = await storage.createUser(parsed.data);
-    return res.status(201).json(sanitizeUser(user));
+    return res.status(201).json(user);
   });
 
-  router.patch("/users/:id", requireAdmin, async (req, res) => {
-    const id = req.params.id as string;
-    const { username, password, role } = req.body ?? {};
-    const updates: { username?: string; password?: string; role?: "sala" | "cozinha" | "admin" } = {};
-
-    if (username !== undefined) {
-      if (typeof username !== "string" || !username.trim()) {
-        return res.status(400).json({ error: "Usuário inválido" });
-      }
-      updates.username = username.trim();
-    }
-
-    if (password !== undefined) {
-      if (typeof password !== "string" || password.length < 6) {
-        return res.status(400).json({ error: "Senha deve ter ao menos 6 caracteres" });
-      }
-      updates.password = password;
-    }
-
-    if (role !== undefined) {
-      if (!["sala", "cozinha", "admin"].includes(role)) {
-        return res.status(400).json({ error: "Role inválida" });
-      }
-      updates.role = role;
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return res.status(400).json({ error: "Nenhuma alteração enviada" });
-    }
-
-    if (updates.username) {
-      const sameName = await storage.getUserByUsername(updates.username);
-      if (sameName && sameName.id !== id) {
-        return res.status(409).json({ error: "Usuário já existe" });
-      }
-    }
-
-    const user = await storage.updateUser(id, updates);
+  // Fetch user by username (simple demo route)
+  router.get("/users/:username", requireAdmin, async (req, res) => {
+    const user = await storage.getUserByUsername(req.params.username as string);
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
-    return res.json(sanitizeUser(user));
+    return res.json(user);
   });
 
   // Menus

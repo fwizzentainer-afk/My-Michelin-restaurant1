@@ -36,8 +36,6 @@ export interface Menu {
   id: string;
   name: string;
   moments: string[];
-  // Maps each editable step to its real menu moment number (ex: [1,3,7,9])
-  displayMoments: number[];
   isActive: boolean;
 }
 
@@ -93,42 +91,8 @@ const defaultTables: Table[] = tableNumbers.map((num) => ({
 }));
 
 const defaultMenus: Menu[] = [
-  {
-    id: 'm1',
-    name: 'Menu 9 momentos',
-    moments: [
-      'Crocante de sementes',
-      'Coalhada',
-      'Moluscos',
-      'Peixe',
-      'Verão',
-      'Carne',
-      'Arroz con leche',
-      'Bolo de milho',
-      'Rosquilha de chocolate',
-    ],
-    displayMoments: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-    isActive: true,
-  },
-  {
-    id: 'm2',
-    name: 'Menu 11 momentos',
-    moments: [
-      'Crocante de sementes',
-      'Coalhada',
-      'Moluscos',
-      'Lagostim',
-      'Peixe',
-      'Verão',
-      'Carne',
-      'Texturas de abóbora',
-      'Arroz con leche',
-      'Bolo de milho',
-      'Rosquilha de chocolate',
-    ],
-    displayMoments: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-    isActive: true,
-  },
+  { id: 'm1', name: 'Menu 9 momentos', moments: ['Crocante de sementes & coalhada', 'Moluscos', 'Peixe', 'Verão', 'Carne', 'Arroz con leche', 'Bolo de milho & rosquilha de chocolate'], isActive: true },
+  { id: 'm2', name: 'Menu 11 momentos', moments: ['Crocante de sementes & coalhada', 'Moluscos', 'Lagostim', 'Peixe', 'Verão', 'Carne', 'Texturas de abóbora', 'Arroz con leche', 'Bolo de milho & rosquilha de chocolate'], isActive: true },
 ];
 
 const defaultPairings = ['Essencial', 'Gastronômico', 'À Carta', 'Sem Pearing'];
@@ -276,17 +240,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const createMenu = (menu: Omit<Menu, 'id'>) => {
     setMenus(prev => {
-      const next = [
-        ...prev,
-        {
-          ...menu,
-          id: `m${Date.now()}`,
-          displayMoments:
-            menu.displayMoments?.length === menu.moments.length
-              ? menu.displayMoments
-              : menu.moments.map((_, idx) => idx + 1),
-        },
-      ];
+      const next = [...prev, { ...menu, id: `m${Date.now()}` }];
       broadcast('SYNC_MENUS', next);
       return next;
     });
