@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { metaImagesPlugin } from "./vite-plugin-meta-images";
+import { VitePWA } from "vite-plugin-pwa";
 
 // defineConfig's TypeScript types don't allow an async function return value.
 // Rather than fight the typing we simply silence the checker here.
@@ -13,6 +14,42 @@ export default defineConfig((async () => {
     react(),
     runtimeErrorOverlay(),
     metaImagesPlugin(),
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["favicon.png", "opengraph.jpg"],
+      manifest: {
+        name: "My Michelin Restaurant",
+        short_name: "Michelin POS",
+        description: "Sistema interno de sala e cozinha",
+        theme_color: "#0B0F14",
+        background_color: "#0B0F14",
+        display: "standalone",
+        orientation: "portrait",
+        start_url: "/",
+        scope: "/",
+        icons: [
+          {
+            src: "/icons/icon-192.jpg",
+            sizes: "192x108",
+            type: "image/jpeg",
+          },
+          {
+            src: "/icons/icon-512.jpg",
+            sizes: "512x288",
+            type: "image/jpeg",
+          },
+          {
+            src: "/icons/icon-512-maskable.jpg",
+            sizes: "512x288",
+            type: "image/jpeg",
+            purpose: "maskable",
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,png,jpg,jpeg,svg,ico,json}"],
+      },
+    }),
   ];
 
   if (process.env.NODE_ENV !== "production" && process.env.REPL_ID !== undefined) {
