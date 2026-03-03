@@ -1,28 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Reset CSS */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@layer base {
+  :root {
+    --font-sans: "Manrope";
+    --background: 222 47% 8%;
+    --foreground: 210 40% 96%;
+    --card: 222 38% 11%;
+    --card-foreground: 210 40% 96%;
+    --popover: 222 38% 11%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 42 94% 58%;
+    --primary-foreground: 222 47% 8%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 70%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 96%;
+    --destructive: 0 63% 48%;
+    --destructive-foreground: 210 40% 96%;
+    --border: 217 22% 22%;
+    --input: 217 22% 22%;
+    --ring: 42 94% 58%;
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(1200px 600px at -20% -20%, hsl(42 94% 58% / 0.11), transparent 50%),
+      radial-gradient(1000px 500px at 120% 0%, hsl(211 100% 58% / 0.09), transparent 45%),
+      linear-gradient(180deg, hsl(222 47% 9%), hsl(222 47% 7%));
+    background-attachment: fixed;
+    font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+  }
 }
-
-html, body, #root {
-  width: 100%;
-  height: 100%;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #ffffff;
-  color: #000000;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
-}
-
