@@ -61,6 +61,10 @@ async function buildAll() {
     target: "node18",
     external: externals,
     logLevel: "info",
+    // Ensure CommonJS deps (e.g. express) can require built-ins when emitted as ESM
+    banner: {
+      js: 'import { createRequire as __createRequire } from "module"; const require = __createRequire(import.meta.url);',
+    },
   });
 }
 

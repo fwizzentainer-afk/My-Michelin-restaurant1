@@ -4,6 +4,11 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import memorystore from "memorystore";
+import cors from "cors";
+import { ensureAdminUser, pool } from "./storage";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,9 +18,43 @@ app.use(express.json());
 
 const httpServer = createServer(app);
 
+const isDev = process.env.NODE_ENV !== "production";
+const corsOrigins = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+if (isDev && corsOrigins.length === 0) {
+  corsOrigins.push("http://localhost:5000");
+}
+
+if (!isDev && corsOrigins.length === 0) {
+  throw new Error("CORS_ORIGINS é obrigatório em produção");
+}
+
+const isAllowedOrigin = (origin?: string) => {
+  if (!origin) return true;
+  if (corsOrigins.length === 0) return true;
+  return corsOrigins.includes(origin);
+};
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (isAllowedOrigin(origin)) return callback(null, true);
+      return callback(new Error("Origin not allowed by CORS"));
+    },
+    credentials: true,
+  }),
+);
+
 const io = new Server(httpServer, {
   cors: {
-    origin: "*",
+    origin(origin, callback) {
+      if (isAllowedOrigin(origin)) return callback(null, true);
+      return callback(new Error("Origin not allowed by CORS"));
+    },
+    credentials: true,
   },
 });
 
@@ -34,12 +73,38 @@ io.on("connection", (socket) => {
 });
 
 const PORT = parseInt(process.env.PORT || "3000", 10);
-const isDev = process.env.NODE_ENV !== "production";
+
+// Session setup (PG store in prod, memory in dev)
+const PgStore = connectPgSimple(session);
+const MemoryStore = memorystore(session);
+const sessionConfig: session.SessionOptions = {
+  secret: process.env.SESSION_SECRET || "change-me",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    sameSite: "lax",
+    secure: !isDev,
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+  },
+};
+
+if (!isDev && sessionConfig.secret === "change-me") {
+  throw new Error("SESSION_SECRET forte é obrigatório em produção");
+}
+
+if (pool) {
+  sessionConfig.store = new PgStore({ pool, tableName: "session" });
+} else {
+  sessionConfig.store = new MemoryStore({ checkPeriod: 86400000 });
+}
+
+app.use(session(sessionConfig));
 
 async function setupRoutes() {
   // Import routes
   try {
-    const { registerRoutes } = await import("./routes.js");
+    // Use extensionless import so it works in TS (dev) and compiled JS (prod)
+    const { registerRoutes } = await import("./routes");
     await registerRoutes(httpServer, app);
     console.log("Rotas registradas");
   } catch (err) {
@@ -77,7 +142,7 @@ async function setupVite() {
 
     app.use(vite.middlewares);
 
-    app.use("/{*path}", async (req, res, next) => {
+    app.use("*", async (req, res, next) => {
       const url = req.originalUrl;
       try {
         const clientTemplate = path.resolve(__dirname, "..", "client", "index.html");
@@ -135,6 +200,17 @@ async function startServer() {
   serverStarted = true;
 
   try {
+    // Ensure default admin exists when credentials are provided
+    if (process.env.ADMIN_PASSWORD) {
+      await ensureAdminUser(
+        process.env.ADMIN_USER || "admin",
+        process.env.ADMIN_PASSWORD,
+        "admin",
+      );
+    } else {
+      console.warn("ADMIN_PASSWORD não definido - defina para criar o usuário admin");
+    }
+
     await setupRoutes();
 
     if (isDev) {

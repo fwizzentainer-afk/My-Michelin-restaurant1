@@ -42,6 +42,19 @@ export default defineConfig((async () => {
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        // split heavy deps to keep main chunk smaller
+        manualChunks(id: string) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("react")) return "vendor-react";
+          if (id.includes("@radix-ui")) return "vendor-radix";
+          if (id.includes("@tanstack")) return "vendor-query";
+          if (id.includes("socket.io-client")) return "vendor-socket";
+          if (id.includes("framer-motion")) return "vendor-motion";
+        },
+      },
+    },
   },
   server: {
     host: "0.0.0.0",

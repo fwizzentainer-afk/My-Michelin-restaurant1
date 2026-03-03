@@ -10,34 +10,44 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const { login } = useStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const handleRoleSelect = (role: Role) => {
-    if (role === "sala") {
-      login("sala");
-      setLocation("/sala");
-    } else if (role === "cozinha") {
-      login("cozinha");
-      setLocation("/cozinha");
-    } else {
-      setSelectedRole(role);
-    }
+    setSelectedRole(role);
+    setUsername("");
+    setPassword("");
   };
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (password === "senha") {
-      login("admin");
-      setLocation("/admin");
-    } else {
+    if (!username || !password || !selectedRole) {
+      toast({ title: "Preencha usuário e senha" });
+      return;
+    }
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Não foi possível entrar");
+      }
+      const data = await res.json();
+      const role = (data.role ?? selectedRole) as Role;
+      login(role);
+      setLocation(`/${role}`);
+    } catch (err) {
       toast({
-        title: "Senha incorreta",
-        description: "A senha de administrador é inválida.",
-        variant: "destructive"
+        title: "Login falhou",
+        description: err instanceof Error ? err.message : "Tente novamente",
+        variant: "destructive",
       });
     }
   };
@@ -107,30 +117,46 @@ export default function Login() {
             </Button>
           </CardContent>
         ) : (
-          <form onSubmit={handleAdminLogin} className="animate-in slide-in-from-right-4 duration-300">
+          <form onSubmit={handleLogin} className="animate-in slide-in-from-right-4 duration-300">
             <CardContent className="space-y-6 px-6 pb-6">
               <div className="flex items-center text-primary mb-4 cursor-pointer hover:underline" onClick={() => setSelectedRole(null)}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 <span className="text-sm">Voltar às opções</span>
               </div>
               
+              <div className="text-sm text-muted-foreground">
+                Entrar como <span className="font-semibold uppercase">{selectedRole}</span>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-xs uppercase tracking-widest text-muted-foreground">Senha do Administrador</Label>
+                <Label htmlFor="username" className="text-xs uppercase tracking-widest text-muted-foreground">Usuário</Label>
+                <Input 
+                  id="username" 
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="ex: sala01"
+                  className="bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/50 h-12"
+                  autoFocus
+                  data-testid="input-login-username"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-xs uppercase tracking-widest text-muted-foreground">Senha</Label>
                 <Input 
                   id="password" 
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Insira a senha"
-                  className="bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/50 h-14 text-lg"
-                  autoFocus
+                  className="bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/50 h-12 text-lg"
                   data-testid="input-login-password"
                 />
               </div>
             </CardContent>
             <CardFooter className="px-6 pb-10">
               <Button type="submit" className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/90 font-medium tracking-wide text-lg" data-testid="button-login-admin">
-                Acessar Gestão
+                Entrar
               </Button>
             </CardFooter>
           </form>
