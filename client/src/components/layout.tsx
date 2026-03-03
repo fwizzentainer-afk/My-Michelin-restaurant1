@@ -21,8 +21,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0b0f14] text-foreground selection:bg-primary/30">
-      <header className="sticky top-0 z-20 border-b border-border/70 bg-[#0a0f17]/88 backdrop-blur-xl">
-        <div className="container flex h-16 max-w-screen-2xl items-center justify-between px-3 sm:px-4">
+      <header className="sticky top-0 z-20 border-b border-border/70 bg-[#0a0f17]/90 backdrop-blur-xl">
+        <div className="container flex h-[4.25rem] max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
             <span className="text-[1.95rem] font-bold tracking-tight text-primary sm:text-[2.2rem]">
               My Michelin Restaurant
@@ -47,7 +47,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       <footer className="border-t border-border py-4 md:py-6 relative z-10 bg-[#070910]/90 backdrop-blur-md">
-        <div className="container flex flex-col md:flex-row items-center justify-between gap-4 max-w-screen-2xl px-3 sm:px-4">
+        <div className="container flex flex-col md:flex-row items-center justify-between gap-4 max-w-screen-2xl px-4 sm:px-6 lg:px-8">
           <p className="text-xs text-muted-foreground uppercase tracking-[0.22em] text-center md:text-left">
             Sistema Interno - Rede Wi-Fi Local
           </p>

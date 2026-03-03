@@ -24,7 +24,7 @@
     --border: 220 18% 22%;
     --input: 220 18% 22%;
     --ring: 43 83% 45%;
-    --radius: 1rem;
+    --radius: 1.15rem;
   }
 
   * {
@@ -72,15 +72,15 @@
   }
 
   .ds-shell {
-    @apply mx-auto w-full max-w-7xl px-4 sm:px-6;
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
   }
 
   .ds-card {
-    @apply rounded-2xl border border-border/80 bg-card/80 shadow-[0_16px_42px_-28px_rgba(0,0,0,0.75)] backdrop-blur-sm;
+    @apply rounded-2xl border border-border/80 bg-card/85 shadow-[0_16px_38px_-22px_rgba(0,0,0,0.72)] backdrop-blur-sm;
   }
 
   .ds-tablet-button {
-    @apply min-h-14 rounded-2xl border border-primary/30 bg-primary text-primary-foreground text-lg font-semibold tracking-tight transition-all duration-300 hover:shadow-[0_0_0_1px_rgba(212,175,55,0.35),0_16px_30px_-20px_rgba(212,175,55,0.7)] active:scale-[0.99];
+    @apply min-h-14 rounded-2xl border border-primary/35 bg-primary text-primary-foreground text-lg font-semibold tracking-tight transition-all duration-300 hover:shadow-[0_0_0_1px_rgba(212,175,55,0.35),0_18px_36px_-22px_rgba(212,175,55,0.7)] active:scale-[0.99];
   }
 
   .ds-status-preparing {
