@@ -2,8 +2,9 @@ import { useStore, Table } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Clock, Timer, AlertCircle, AlertTriangle, Utensils } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, AlertTriangle, Utensils, Expand } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function Cozinha() {
   const { tables, menus, updateTable, triggerNotification } = useStore();
@@ -68,6 +69,7 @@ export default function Cozinha() {
               table={table} 
               onReady={() => handleReady(table.id)} 
               menuMoments={menus.find(m => m.name === table.menu)?.moments || []}
+              displayMoments={menus.find(m => m.name === table.menu)?.displayMoments || []}
             />
           ))
         )}
@@ -76,7 +78,17 @@ export default function Cozinha() {
   );
 }
 
-function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table, onReady: () => void, menuMoments: string[] }) {
+function CozinhaTableCard({
+  table,
+  onReady,
+  menuMoments,
+  displayMoments,
+}: {
+  table: Table;
+  onReady: () => void;
+  menuMoments: string[];
+  displayMoments: number[];
+}) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -97,14 +109,25 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table, onRea
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getMomentDisplay = (moment: number, total: number) => {
+  const getMomentDisplay = (moment: number) => {
     if (moment === 0) return "0";
-    if (moment === 1) return "1&2";
-    if (moment === total - 1) return `${total-1}&${total}`;
-    return moment + 1;
+    const mapped = displayMoments[moment - 1];
+    return String(mapped ?? moment);
   };
 
   const currentMomentName = table.currentMoment > 0 ? menuMoments[table.currentMoment - 1] : null;
+  const stepStatus = menuMoments.map((name, idx) => {
+    const step = idx + 1;
+    const history = table.momentsHistory.find((h) => h.momentNumber === step);
+    return {
+      step,
+      real: displayMoments[idx] ?? step,
+      name,
+      history,
+      completed: !!history?.finishTime,
+      inProgress: !!history && !history.finishTime,
+    };
+  });
 
   return (
     <Card className={`overflow-hidden transition-all border-2 duration-300 flex flex-col ${
@@ -154,7 +177,7 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table, onRea
           <div className="flex justify-between items-center mb-2">
             <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-tighter">Momento</span>
             <Badge variant="outline" className="text-xs font-mono border-primary/20 text-primary">
-              {getMomentDisplay(table.currentMoment, table.totalMoments)} / {table.totalMoments}
+              {getMomentDisplay(table.currentMoment)} / {table.totalMoments}
             </Badge>
           </div>
           <div className="text-xl font-serif text-foreground uppercase tracking-tight text-center py-2">
@@ -171,22 +194,60 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table, onRea
       </CardContent>
 
       <CardFooter className="pt-0 pb-6 px-6">
-        <Button 
-          className={`w-full h-14 text-lg font-serif tracking-wide transition-all ${
+        <div className="w-full space-y-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full border-border/40">
+                <Expand className="w-4 h-4 mr-2" />
+                Ver passos completos
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-xl bg-card border-border">
+              <DialogHeader>
+                <DialogTitle className="font-serif text-xl">
+                  Mesa {table.number} · {table.pax ?? "-"} Pax
+                </DialogTitle>
+                <p className="text-sm text-muted-foreground">
+                  {table.menu} · Pairing {table.pairing || "Aguardando"}
+                </p>
+              </DialogHeader>
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+                {stepStatus.map((step) => (
+                  <div key={step.step} className="rounded-lg border border-border/40 p-3 bg-background/40">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium">
+                        {step.completed ? "✔" : step.inProgress ? "◐" : "☐"} M{step.real}/{table.totalMoments} - {step.name}
+                      </p>
+                      {step.inProgress && <Badge className="bg-amber-500/20 text-amber-600">Em preparo</Badge>}
+                      {step.completed && <Badge className="bg-emerald-500/20 text-emerald-600">Concluído</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {step.history?.startTime
+                        ? new Date(step.history.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                        : "Aguardando"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button
+            className={`w-full h-14 text-lg font-serif tracking-wide transition-all ${
             table.status === 'ready' 
             ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20' 
             : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg'
           }`}
-          disabled={table.status !== 'preparing'}
-          onClick={onReady}
-          data-testid={`button-ready-${table.id}`}
-        >
-          {table.status === 'ready' ? (
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5" /> Servido
-            </div>
-          ) : "Serviço"}
-        </Button>
+            disabled={table.status !== 'preparing'}
+            onClick={onReady}
+            data-testid={`button-ready-${table.id}`}
+          >
+            {table.status === 'ready' ? (
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5" /> Servido
+              </div>
+            ) : "Serviço"}
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

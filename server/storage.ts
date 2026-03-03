@@ -25,6 +25,11 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   verifyUserCredentials(username: string, password: string): Promise<User | null>;
+  listUsers(): Promise<User[]>;
+  updateUser(
+    id: string,
+    updates: Partial<InsertUser> & { password?: string },
+  ): Promise<User | null>;
 
   listMenus(): Promise<Menu[]>;
   createMenu(menu: InsertMenu): Promise<Menu>;
@@ -79,6 +84,24 @@ export class MemStorage implements IStorage {
     if (!user) return null;
     const ok = await bcrypt.compare(password, user.password);
     return ok ? user : null;
+  }
+
+  async listUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async updateUser(
+    id: string,
+    updates: Partial<InsertUser> & { password?: string },
+  ): Promise<User | null> {
+    const existing = this.users.get(id);
+    if (!existing) return null;
+    const next: User = { ...existing, ...updates };
+    if (updates.password) {
+      next.password = await bcrypt.hash(updates.password, SALT_ROUNDS);
+    }
+    this.users.set(id, next);
+    return next;
   }
 
   async listMenus(): Promise<Menu[]> {
@@ -170,6 +193,29 @@ export class PostgresStorage implements IStorage {
     if (!user) return null;
     const ok = await bcrypt.compare(password, user.password);
     return ok ? user : null;
+  }
+
+  async listUsers(): Promise<User[]> {
+    return this.db.select().from(users);
+  }
+
+  async updateUser(
+    id: string,
+    updates: Partial<InsertUser> & { password?: string },
+  ): Promise<User | null> {
+    const nextUpdates: Partial<InsertUser> & { password?: string } = {
+      ...updates,
+    };
+    if (updates.password) {
+      nextUpdates.password = await bcrypt.hash(updates.password, SALT_ROUNDS);
+    }
+
+    const [row] = await this.db
+      .update(users)
+      .set(nextUpdates)
+      .where(eq(users.id, id))
+      .returning();
+    return row ?? null;
   }
 
   async listMenus(): Promise<Menu[]> {

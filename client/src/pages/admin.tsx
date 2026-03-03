@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useStore, Menu, Table, MomentLog, HistoricalService } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,17 +11,70 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 
+type AccessUser = {
+  id: string;
+  username: string;
+  role: "sala" | "cozinha" | "admin";
+};
+
 export default function Admin() {
   const { menus, tables, historicalLogs, createMenu, updateMenu, deleteMenu } = useStore();
   const { toast } = useToast();
   
   const [newMenuName, setNewMenuName] = useState("");
   const [newMoments, setNewMoments] = useState<string[]>([""]);
+  const [newMomentNumbers, setNewMomentNumbers] = useState<string[]>(["1"]);
+  const [editingMenuId, setEditingMenuId] = useState<string | null>(null);
+  const [editMenuName, setEditMenuName] = useState("");
+  const [editMoments, setEditMoments] = useState<string[]>([]);
+  const [editMomentNumbers, setEditMomentNumbers] = useState<string[]>([]);
   
   // Filters for Analytics
   const [dateRange, setDateRange] = useState<string>("today"); // 'today', 'week', 'all'
   const [compareMode, setCompareMode] = useState<boolean>(false);
   const [selectedMenuFilter, setSelectedMenuFilter] = useState<string>("all");
+  const [accessUsers, setAccessUsers] = useState<AccessUser[]>([]);
+  const [accessLoading, setAccessLoading] = useState(false);
+  const [newAccess, setNewAccess] = useState({
+    username: "",
+    password: "",
+    role: "sala" as AccessUser["role"],
+  });
+  const [edits, setEdits] = useState<
+    Record<string, { username: string; role: AccessUser["role"]; password: string }>
+  >({});
+
+  const loadAccessUsers = async () => {
+    setAccessLoading(true);
+    try {
+      const res = await fetch("/api/users", { credentials: "include" });
+      if (!res.ok) throw new Error("Não foi possível carregar usuários");
+      const users = (await res.json()) as AccessUser[];
+      setAccessUsers(users);
+      const initialEdits: Record<string, { username: string; role: AccessUser["role"]; password: string }> = {};
+      users.forEach((user) => {
+        initialEdits[user.id] = {
+          username: user.username,
+          role: user.role,
+          password: "",
+        };
+      });
+      setEdits(initialEdits);
+    } catch (err) {
+      toast({
+        title: "Erro ao carregar acessos",
+        description: err instanceof Error ? err.message : "Falha inesperada",
+        variant: "destructive",
+      });
+    } finally {
+      setAccessLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAccessUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const formatDuration = (ms: number) => {
     if (!ms || ms < 0) return "0s";
@@ -193,7 +246,10 @@ export default function Admin() {
   }, [allServices, compareMode]);
 
   // Handlers for Menus
-  const handleAddMoment = () => setNewMoments([...newMoments, ""]);
+  const handleAddMoment = () => {
+    setNewMoments([...newMoments, ""]);
+    setNewMomentNumbers([...newMomentNumbers, String(newMomentNumbers.length + 1)]);
+  };
   const handleUpdateMoment = (index: number, value: string) => {
     const updated = [...newMoments];
     updated[index] = value;
@@ -202,6 +258,13 @@ export default function Admin() {
   const handleRemoveMoment = (index: number) => {
     if (newMoments.length <= 1) return;
     setNewMoments(newMoments.filter((_, i) => i !== index));
+    setNewMomentNumbers(newMomentNumbers.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateMomentNumber = (index: number, value: string) => {
+    const updated = [...newMomentNumbers];
+    updated[index] = value;
+    setNewMomentNumbers(updated);
   };
 
   const handleCreateMenu = () => {
@@ -214,10 +277,124 @@ export default function Admin() {
       return;
     }
 
-    createMenu({ name: newMenuName, moments: newMoments, isActive: false });
+    const parsedNumbers = newMomentNumbers.map(n => Number(n));
+    if (parsedNumbers.some(n => !Number.isFinite(n) || n <= 0)) {
+      toast({ title: "Erro", description: "Números reais dos momentos inválidos", variant: "destructive" });
+      return;
+    }
+
+    createMenu({
+      name: newMenuName,
+      moments: newMoments,
+      displayMoments: parsedNumbers,
+      isActive: false,
+    });
     setNewMenuName("");
     setNewMoments([""]);
+    setNewMomentNumbers(["1"]);
     toast({ title: "Sucesso", description: "Menu criado com sucesso" });
+  };
+
+  const beginEditMenu = (menu: Menu) => {
+    setEditingMenuId(menu.id);
+    setEditMenuName(menu.name);
+    setEditMoments([...menu.moments]);
+    setEditMomentNumbers(
+      (menu.displayMoments?.length ? menu.displayMoments : menu.moments.map((_, idx) => idx + 1)).map(String),
+    );
+  };
+
+  const handleSaveMenuEdit = () => {
+    if (!editingMenuId) return;
+    if (!editMenuName.trim() || editMoments.some((m) => !m.trim())) {
+      toast({ title: "Erro", description: "Preencha nome e momentos", variant: "destructive" });
+      return;
+    }
+    const parsedNumbers = editMomentNumbers.map((n) => Number(n));
+    if (parsedNumbers.some((n) => !Number.isFinite(n) || n <= 0)) {
+      toast({ title: "Erro", description: "Números reais inválidos", variant: "destructive" });
+      return;
+    }
+
+    updateMenu(editingMenuId, {
+      name: editMenuName.trim(),
+      moments: editMoments.map((m) => m.trim()),
+      displayMoments: parsedNumbers,
+    });
+    setEditingMenuId(null);
+    toast({ title: "Sucesso", description: "Menu atualizado" });
+  };
+
+  const handleCreateAccess = async () => {
+    if (!newAccess.username.trim() || !newAccess.password.trim()) {
+      toast({
+        title: "Dados obrigatórios",
+        description: "Informe usuário e senha",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          username: newAccess.username.trim(),
+          password: newAccess.password,
+          role: newAccess.role,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Falha ao criar usuário");
+      }
+      setNewAccess({ username: "", password: "", role: "sala" });
+      await loadAccessUsers();
+      toast({ title: "Usuário criado com sucesso" });
+    } catch (err) {
+      toast({
+        title: "Erro ao criar usuário",
+        description: err instanceof Error ? err.message : "Falha inesperada",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveAccess = async (id: string) => {
+    const draft = edits[id];
+    const original = accessUsers.find((user) => user.id === id);
+    if (!draft || !original) return;
+    const payload: Record<string, string> = {};
+    if (draft.username.trim() !== original.username) payload.username = draft.username.trim();
+    if (draft.role !== original.role) payload.role = draft.role;
+    if (draft.password.trim()) payload.password = draft.password.trim();
+
+    if (Object.keys(payload).length === 0) {
+      toast({ title: "Nenhuma alteração para salvar" });
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Falha ao atualizar usuário");
+      }
+      await loadAccessUsers();
+      toast({ title: "Credenciais atualizadas" });
+    } catch (err) {
+      toast({
+        title: "Erro ao atualizar usuário",
+        description: err instanceof Error ? err.message : "Falha inesperada",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeleteMenu = (menu: Menu) => {
@@ -255,7 +432,7 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="analytics" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3 bg-card border border-border/40 mb-6">
+        <TabsList className="grid w-full max-w-xl grid-cols-4 bg-card border border-border/40 mb-6">
           <TabsTrigger value="realtime" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
             <Clock className="w-4 h-4 mr-2" />
             Tempo Real
@@ -267,6 +444,10 @@ export default function Admin() {
           <TabsTrigger value="menus" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
             <UtensilsIcon className="w-4 h-4 mr-2" />
             Menus
+          </TabsTrigger>
+          <TabsTrigger value="access" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
+            <Lock className="w-4 h-4 mr-2" />
+            Acessos
           </TabsTrigger>
         </TabsList>
 
@@ -538,11 +719,58 @@ export default function Admin() {
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {menu.moments.map((m, i) => (
-                        <Badge key={i} variant="secondary" className="text-[10px] font-normal">{i+1}. {m}</Badge>
+                        <Badge key={i} variant="secondary" className="text-[10px] font-normal">
+                          M{menu.displayMoments?.[i] ?? i + 1}. {m}
+                        </Badge>
                       ))}
                     </div>
+                    {editingMenuId === menu.id && (
+                      <div className="mt-4 space-y-2 border-t border-border/20 pt-4">
+                        <Input
+                          value={editMenuName}
+                          onChange={(e) => setEditMenuName(e.target.value)}
+                          className="bg-background/50 border-border/50"
+                        />
+                        {editMoments.map((moment, idx) => (
+                          <div key={idx} className="grid grid-cols-4 gap-2">
+                            <Input
+                              value={editMomentNumbers[idx] || ""}
+                              onChange={(e) => {
+                                const next = [...editMomentNumbers];
+                                next[idx] = e.target.value;
+                                setEditMomentNumbers(next);
+                              }}
+                              placeholder="Real"
+                              className="bg-background/50 border-border/50"
+                            />
+                            <Input
+                              value={moment}
+                              onChange={(e) => {
+                                const next = [...editMoments];
+                                next[idx] = e.target.value;
+                                setEditMoments(next);
+                              }}
+                              placeholder="Nome do momento"
+                              className="col-span-3 bg-background/50 border-border/50"
+                            />
+                          </div>
+                        ))}
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={handleSaveMenuEdit}>Salvar edição</Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingMenuId(null)}>Cancelar</Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex sm:flex-col justify-start gap-2 shrink-0 border-l border-border/20 pl-4 sm:border-l-0 sm:pl-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => beginEditMenu(menu)}
+                    >
+                      Editar
+                    </Button>
                     <Button 
                       variant={menu.isActive ? "outline" : "default"} 
                       size="sm"
@@ -584,7 +812,12 @@ export default function Admin() {
                   <Label className="text-xs uppercase tracking-widest text-muted-foreground sticky top-0 bg-card py-2 z-10 block">Momentos do Serviço</Label>
                   {newMoments.map((moment, idx) => (
                     <div key={idx} className="flex gap-2 items-center">
-                      <div className="w-6 text-center text-xs text-muted-foreground shrink-0">{idx + 1}.</div>
+                      <Input
+                        value={newMomentNumbers[idx] || ""}
+                        onChange={(e) => handleUpdateMomentNumber(idx, e.target.value)}
+                        placeholder="Real"
+                        className="bg-background/50 border-border/50 h-9 w-16 text-center"
+                      />
                       <Input 
                         value={moment}
                         onChange={(e) => handleUpdateMoment(idx, e.target.value)}
@@ -611,6 +844,132 @@ export default function Admin() {
                     Salvar Menu
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="access" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1 space-y-4">
+            <h3 className="text-lg font-serif text-foreground">Criar Acesso</h3>
+            <Card className="border-border/40 bg-card/60">
+              <CardContent className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-widest text-muted-foreground">Usuário</Label>
+                  <Input
+                    value={newAccess.username}
+                    onChange={(e) => setNewAccess((prev) => ({ ...prev, username: e.target.value }))}
+                    placeholder="ex: Sala06"
+                    className="bg-background/50 border-border/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-widest text-muted-foreground">Senha</Label>
+                  <Input
+                    type="password"
+                    value={newAccess.password}
+                    onChange={(e) => setNewAccess((prev) => ({ ...prev, password: e.target.value }))}
+                    placeholder="mínimo 6 caracteres"
+                    className="bg-background/50 border-border/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-widest text-muted-foreground">Role</Label>
+                  <Select
+                    value={newAccess.role}
+                    onValueChange={(value: AccessUser["role"]) => setNewAccess((prev) => ({ ...prev, role: value }))}
+                  >
+                    <SelectTrigger className="bg-background/50 border-border/50">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sala">Sala</SelectItem>
+                      <SelectItem value="cozinha">Cozinha</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleCreateAccess}>
+                  Criar usuário
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-serif text-foreground">Usuários Cadastrados</h3>
+              <Button variant="outline" size="sm" onClick={loadAccessUsers} disabled={accessLoading}>
+                Atualizar
+              </Button>
+            </div>
+            <Card className="border-border/40 bg-card/60">
+              <CardContent className="p-4 space-y-3">
+                {accessUsers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">
+                    {accessLoading ? "Carregando usuários..." : "Nenhum usuário encontrado"}
+                  </p>
+                ) : (
+                  accessUsers.map((user) => (
+                    <div key={user.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 p-3 rounded-lg border border-border/30 bg-background/40">
+                      <Input
+                        className="md:col-span-4 bg-background/50 border-border/50"
+                        value={edits[user.id]?.username ?? user.username}
+                        onChange={(e) =>
+                          setEdits((prev) => ({
+                            ...prev,
+                            [user.id]: {
+                              ...(prev[user.id] ?? { username: user.username, role: user.role, password: "" }),
+                              username: e.target.value,
+                            },
+                          }))
+                        }
+                      />
+                      <Select
+                        value={edits[user.id]?.role ?? user.role}
+                        onValueChange={(value: AccessUser["role"]) =>
+                          setEdits((prev) => ({
+                            ...prev,
+                            [user.id]: {
+                              ...(prev[user.id] ?? { username: user.username, role: user.role, password: "" }),
+                              role: value,
+                            },
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="md:col-span-3 bg-background/50 border-border/50">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sala">Sala</SelectItem>
+                          <SelectItem value="cozinha">Cozinha</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="password"
+                        className="md:col-span-3 bg-background/50 border-border/50"
+                        value={edits[user.id]?.password ?? ""}
+                        placeholder="Nova senha (opcional)"
+                        onChange={(e) =>
+                          setEdits((prev) => ({
+                            ...prev,
+                            [user.id]: {
+                              ...(prev[user.id] ?? { username: user.username, role: user.role, password: "" }),
+                              password: e.target.value,
+                            },
+                          }))
+                        }
+                      />
+                      <Button
+                        className="md:col-span-2"
+                        onClick={() => handleSaveAccess(user.id)}
+                      >
+                        Salvar
+                      </Button>
+                    </div>
+                  ))
+                )}
               </CardContent>
             </Card>
           </div>
