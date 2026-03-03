@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import socket from "@/socket";
 
 // Types
 export type Role = 'sala' | 'cozinha' | 'admin' | null;
@@ -49,6 +50,15 @@ export interface HistoricalService {
   momentsHistory: MomentLog[];
 }
 
+type SyncType = "SYNC_TABLES" | "SYNC_MENUS" | "SYNC_LOGS" | "SYNC_SETTINGS" | "NOTIFICATION";
+
+interface SyncEnvelope {
+  type: SyncType;
+  payload: any;
+  sourceId: string;
+  ts: number;
+}
+
 interface StoreState {
   role: Role | null;
   tables: Table[];
@@ -57,6 +67,12 @@ interface StoreState {
   historicalLogs: HistoricalService[];
   settings: {
     soundEnabled: boolean;
+  };
+  connectionStatus: {
+    online: boolean;
+    socketConnected: boolean;
+    pendingSync: number;
+    mode: "online" | "offline" | "reconnecting";
   };
   login: (role: Role | null) => void;
   logout: () => void;
@@ -98,6 +114,7 @@ const defaultMenus: Menu[] = [
 const defaultPairings = ['Essencial', 'Gastronômico', 'À Carta', 'Sem Pearing'];
 
 const StoreContext = createContext<StoreState | undefined>(undefined);
+const SYNC_CHANNEL = "michelin_sync";
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<Role | null>(null);
@@ -105,22 +122,48 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [menus, setMenus] = useState<Menu[]>(defaultMenus);
   const [historicalLogs, setHistoricalLogs] = useState<HistoricalService[]>([]);
   const [settings, setSettings] = useState({ soundEnabled: true });
+  const [online, setOnline] = useState<boolean>(
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
+  const [socketConnected, setSocketConnected] = useState<boolean>(socket.connected);
+  const [pendingSync, setPendingSync] = useState(0);
+  const syncQueueRef = useRef<SyncEnvelope[]>([]);
+  const syncSourceIdRef = useRef<string>(crypto.randomUUID());
+  const channelRef = useRef<BroadcastChannel | null>(null);
+
+  const playNotificationSound = () => {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(440, audioContext.currentTime + 0.5);
+
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.5);
+  };
 
   useEffect(() => {
-    const channel = new BroadcastChannel('michelin_sync');
-    
-    channel.onmessage = (event) => {
-      const { type, payload } = event.data;
-      if (type === 'SYNC_TABLES') {
-        setTables(payload);
-      } else if (type === 'SYNC_MENUS') {
-        setMenus(payload);
-      } else if (type === 'SYNC_LOGS') {
-        setHistoricalLogs(payload);
-      } else if (type === 'SYNC_SETTINGS') {
-        setSettings(payload);
-      } else if (type === 'NOTIFICATION') {
-        const { targetRole, title, body } = payload;
+    const applyIncomingSync = (event: SyncEnvelope) => {
+      if (event.sourceId === syncSourceIdRef.current) return;
+
+      if (event.type === "SYNC_TABLES") {
+        setTables(event.payload);
+      } else if (event.type === "SYNC_MENUS") {
+        setMenus(event.payload);
+      } else if (event.type === "SYNC_LOGS") {
+        setHistoricalLogs(event.payload);
+      } else if (event.type === "SYNC_SETTINGS") {
+        setSettings(event.payload);
+      } else if (event.type === "NOTIFICATION") {
+        const { targetRole, title, body } = event.payload;
         if (role === targetRole) {
           if ("Notification" in window && Notification.permission === "granted") {
             try {
@@ -140,35 +183,84 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
+    const channel = new BroadcastChannel(SYNC_CHANNEL);
+    channelRef.current = channel;
+    channel.onmessage = (event) => {
+      const payload = event.data as SyncEnvelope;
+      applyIncomingSync(payload);
+    };
+
+    const onSocketSync = (payload: SyncEnvelope) => applyIncomingSync(payload);
+    socket.on("state-sync", onSocketSync);
+
     return () => {
+      socket.off("state-sync", onSocketSync);
+      channelRef.current = null;
       channel.close();
     };
   }, [role, settings.soundEnabled]);
 
-  const broadcast = (type: string, payload: any) => {
-    const channel = new BroadcastChannel('michelin_sync');
-    channel.postMessage({ type, payload });
-    channel.close();
+  const flushQueuedSync = () => {
+    if (!online || !socketConnected) return;
+    if (syncQueueRef.current.length === 0) return;
+
+    for (const envelope of syncQueueRef.current) {
+      socket.emit("state-sync", envelope);
+    }
+    syncQueueRef.current = [];
+    setPendingSync(0);
   };
 
-  const playNotificationSound = () => {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+  const publishSync = (type: SyncType, payload: any) => {
+    const envelope: SyncEnvelope = {
+      type,
+      payload,
+      sourceId: syncSourceIdRef.current,
+      ts: Date.now(),
+    };
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+    channelRef.current?.postMessage(envelope);
 
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(440, audioContext.currentTime + 0.5);
+    if (online && socketConnected) {
+      socket.emit("state-sync", envelope);
+      return;
+    }
 
-    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + 0.5);
+    syncQueueRef.current.push(envelope);
+    setPendingSync(syncQueueRef.current.length);
   };
+
+  useEffect(() => {
+    const onOnline = () => {
+      setOnline(true);
+      flushQueuedSync();
+    };
+    const onOffline = () => setOnline(false);
+
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, [socketConnected]);
+
+  useEffect(() => {
+    const onConnect = () => {
+      setSocketConnected(true);
+      flushQueuedSync();
+    };
+    const onDisconnect = () => {
+      setSocketConnected(false);
+    };
+
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+    };
+  }, [online]);
 
   const requestNotificationPermission = async () => {
     if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
@@ -192,7 +284,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const updateTable = (id: string, updates: Partial<Table>) => {
     setTables(prev => {
       const next = prev.map(t => t.id === id ? { ...t, ...updates } : t);
-      broadcast('SYNC_TABLES', next);
+      publishSync("SYNC_TABLES", next);
       return next;
     });
   };
@@ -212,7 +304,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 endTime: Date.now(),
                 momentsHistory: t.momentsHistory
               }];
-              broadcast('SYNC_LOGS', nextLogs);
+              publishSync("SYNC_LOGS", nextLogs);
               return nextLogs;
             });
           }
@@ -233,7 +325,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }
         return t;
       });
-      broadcast('SYNC_TABLES', nextTables);
+      publishSync("SYNC_TABLES", nextTables);
       return nextTables;
     });
   };
@@ -241,7 +333,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const createMenu = (menu: Omit<Menu, 'id'>) => {
     setMenus(prev => {
       const next = [...prev, { ...menu, id: `m${Date.now()}` }];
-      broadcast('SYNC_MENUS', next);
+      publishSync("SYNC_MENUS", next);
       return next;
     });
   };
@@ -249,7 +341,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const updateMenu = (id: string, updates: Partial<Menu>) => {
     setMenus(prev => {
       const next = prev.map(m => m.id === id ? { ...m, ...updates } : m);
-      broadcast('SYNC_MENUS', next);
+      publishSync("SYNC_MENUS", next);
       return next;
     });
   };
@@ -259,14 +351,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const menu = prev.find(m => m.id === id);
       if (menu?.isActive) return prev;
       const next = prev.filter(m => m.id !== id);
-      broadcast('SYNC_MENUS', next);
+      publishSync("SYNC_MENUS", next);
       return next;
     });
   };
 
 
   const triggerNotification = (targetRole: Role, title: string, body: string) => {
-    broadcast('NOTIFICATION', { targetRole, title, body });
+    publishSync("NOTIFICATION", { targetRole, title, body });
     if (role === targetRole) {
       if ("Notification" in window && Notification.permission === "granted") {
         try {
@@ -286,14 +378,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const updateSettings = (newSettings: Partial<StoreState['settings']>) => {
     setSettings(prev => {
       const next = { ...prev, ...newSettings };
-      broadcast('SYNC_SETTINGS', next);
+      publishSync("SYNC_SETTINGS", next);
       return next;
     });
   };
 
+  const connectionMode: "online" | "offline" | "reconnecting" =
+    !online ? "offline" : socketConnected ? "online" : "reconnecting";
+
   return (
     <StoreContext.Provider value={{
-      role, tables, menus, pairings: defaultPairings, historicalLogs, settings,
+      role,
+      tables,
+      menus,
+      pairings: defaultPairings,
+      historicalLogs,
+      settings,
+      connectionStatus: {
+        online,
+        socketConnected,
+        pendingSync,
+        mode: connectionMode,
+      },
       login, logout, updateTable, createMenu, updateMenu, deleteMenu, finishService, triggerNotification, updateSettings
     }}>
       {children}

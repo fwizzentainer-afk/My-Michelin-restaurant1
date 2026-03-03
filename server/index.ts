@@ -67,6 +67,11 @@ io.on("connection", (socket) => {
     io.emit("pedido-recebido", pedido);
   });
 
+  socket.on("state-sync", (syncEvent) => {
+    // Re-broadcast to other connected clients to keep state in sync.
+    socket.broadcast.emit("state-sync", syncEvent);
+  });
+
   socket.on("disconnect", () => {
     console.log("Dispositivo desconectado");
   });

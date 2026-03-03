@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 export default function Admin() {
-  const { menus, tables, historicalLogs, createMenu, updateMenu, deleteMenu } = useStore();
+  const { menus, tables, historicalLogs, createMenu, updateMenu, deleteMenu, connectionStatus } = useStore();
   const { toast } = useToast();
   
   const [newMenuName, setNewMenuName] = useState("");
@@ -252,6 +252,29 @@ export default function Admin() {
           <Settings2 className="w-5 h-5 mr-3" />
           Painel de Gestão & Analytics Avançado
         </h2>
+        <div className="flex items-center gap-2 rounded-md border border-border/60 bg-card/70 px-3 py-2">
+          <span
+            className={`h-2.5 w-2.5 rounded-full ${
+              connectionStatus.mode === "online"
+                ? "bg-emerald-500"
+                : connectionStatus.mode === "reconnecting"
+                  ? "bg-amber-500"
+                  : "bg-red-500"
+            }`}
+          />
+          <span className="text-[10px] uppercase tracking-[2px] text-muted-foreground">
+            {connectionStatus.mode === "online"
+              ? "Conectado"
+              : connectionStatus.mode === "reconnecting"
+                ? "Reconectando"
+                : "Offline"}
+          </span>
+          {connectionStatus.pendingSync > 0 && (
+            <Badge variant="outline" className="text-[10px]">
+              {connectionStatus.pendingSync} pendente(s)
+            </Badge>
+          )}
+        </div>
       </div>
 
       <Tabs defaultValue="analytics" className="w-full">

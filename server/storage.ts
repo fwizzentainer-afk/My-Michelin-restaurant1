@@ -1,5 +1,7 @@
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
+import fs from "fs";
+import path from "path";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
@@ -39,6 +41,29 @@ export interface IStorage {
 }
 
 const SALT_ROUNDS = 10;
+const LOGIN_USERS_FILE = path.resolve(process.cwd(), ".node", "login-users.json");
+
+function loadLocalUsers(): User[] {
+  try {
+    if (!fs.existsSync(LOGIN_USERS_FILE)) return [];
+    const raw = fs.readFileSync(LOGIN_USERS_FILE, "utf-8");
+    const parsed = JSON.parse(raw) as User[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed;
+  } catch (err) {
+    console.warn("Falha ao carregar banco local de login:", err);
+    return [];
+  }
+}
+
+function saveLocalUsers(usersList: User[]) {
+  try {
+    fs.mkdirSync(path.dirname(LOGIN_USERS_FILE), { recursive: true });
+    fs.writeFileSync(LOGIN_USERS_FILE, JSON.stringify(usersList, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("Falha ao salvar banco local de login:", err);
+  }
+}
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
@@ -47,7 +72,8 @@ export class MemStorage implements IStorage {
   private historical: HistoricalService[];
 
   constructor() {
-    this.users = new Map();
+    const bootUsers = loadLocalUsers();
+    this.users = new Map(bootUsers.map((user) => [user.id, user]));
     this.menus = new Map();
     this.tables = new Map();
     this.historical = [];
@@ -68,6 +94,7 @@ export class MemStorage implements IStorage {
     const hashed = await bcrypt.hash(insertUser.password, SALT_ROUNDS);
     const user: User = { ...insertUser, id, password: hashed };
     this.users.set(id, user);
+    saveLocalUsers(Array.from(this.users.values()));
     return user;
   }
 
