@@ -9,15 +9,40 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const LOGIN_GATE_STORAGE_KEY = "michelin_login_gate_enabled";
+
 export default function Login() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loginGateEnabled, setLoginGateEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(LOGIN_GATE_STORAGE_KEY);
+      if (saved == null) return true;
+      return saved === "true";
+    } catch {
+      return true;
+    }
+  });
   const { login, settings } = useStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+  const toggleLoginGate = () => {
+    const next = !loginGateEnabled;
+    setLoginGateEnabled(next);
+    try {
+      localStorage.setItem(LOGIN_GATE_STORAGE_KEY, String(next));
+    } catch {}
+  };
+
   const handleRoleSelect = (role: Exclude<Role, null>) => {
+    if (!loginGateEnabled) {
+      login(role);
+      setLocation(`/${role}`);
+      return;
+    }
+
     if ((role === "sala" || role === "cozinha") && !settings.requireRoleLogin) {
       login(role);
       setLocation(`/${role}`);
@@ -59,7 +84,25 @@ export default function Login() {
   };
 
   if (!selectedRole) {
-    return <RestaurantAccessSelection onSelectRole={handleRoleSelect} />;
+    return (
+      <div className="relative min-h-screen w-full">
+        <div className="absolute right-4 top-4 z-20 flex items-center gap-2 rounded-md border border-border/60 bg-card/80 px-3 py-2">
+          <span className="text-[10px] uppercase tracking-[2px] text-muted-foreground">
+            Login
+          </span>
+          <Button
+            type="button"
+            variant={loginGateEnabled ? "default" : "outline"}
+            size="sm"
+            className="h-7 px-2 text-[10px] uppercase tracking-[2px]"
+            onClick={toggleLoginGate}
+          >
+            {loginGateEnabled ? "ON" : "OFF"}
+          </Button>
+        </div>
+        <RestaurantAccessSelection onSelectRole={handleRoleSelect} />
+      </div>
+    );
   }
 
   return (
