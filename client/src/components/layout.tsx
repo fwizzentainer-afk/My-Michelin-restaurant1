@@ -57,7 +57,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <footer className="border-t border-border/70 py-4 md:py-5 relative z-10 bg-background/90">
         <div className="container flex flex-col md:flex-row items-center justify-between gap-4 max-w-screen-2xl">
           <p className="text-[10px] text-muted-foreground uppercase tracking-[3px] text-center md:text-left">
-            Sistema Interno - Rede Wi-Fi Local
+            Sistema de POS &amp; Controle de Ticket • Created by Felipe Wizzentainer
           </p>
 
           <Dialog>

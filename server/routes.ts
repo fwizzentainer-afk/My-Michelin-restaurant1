@@ -30,12 +30,12 @@ export async function registerRoutes(
   };
 
   const requireAdmin: express.RequestHandler = async (req, res, next) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Não autenticado" });
-    }
-
     if (req.session.role === "admin") {
       return next();
+    }
+
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Não autenticado" });
     }
 
     // Fallback for old/stale sessions that may not have role persisted correctly.
