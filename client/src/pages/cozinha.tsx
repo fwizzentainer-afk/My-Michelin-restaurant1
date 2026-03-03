@@ -2,7 +2,7 @@ import { useStore, Table } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Clock, Timer, AlertCircle, AlertTriangle, Utensils } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, AlertTriangle, Utensils } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function Cozinha() {
@@ -34,21 +34,21 @@ export default function Cozinha() {
     <div className="space-y-8 animate-in fade-in duration-500 max-w-5xl mx-auto w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
         <div>
-          <h2 className="text-3xl font-serif text-primary">Painel da Cozinha</h2>
-          <p className="text-muted-foreground text-sm uppercase tracking-widest mt-1">Gestão de Comandas em Tempo Real</p>
+          <h2 className="text-3xl font-light uppercase tracking-[3px] text-foreground">Painel da Cozinha</h2>
+          <p className="text-muted-foreground text-sm uppercase tracking-[2px] mt-1">Gestão de Comandas em Tempo Real</p>
         </div>
         <div className="flex gap-4">
-          <Card className="px-4 py-2 bg-amber-500/10 border-amber-500/20 flex items-center gap-3">
-            <Clock className="w-5 h-5 text-amber-500" />
+          <Card className="px-4 py-2 bg-card/70 border-border/70 flex items-center gap-3">
+            <Clock className="w-5 h-5 text-foreground" />
             <div className="flex flex-col">
-              <span className="text-[10px] uppercase text-amber-500/70 font-bold leading-none">Em Preparo</span>
+              <span className="text-[10px] uppercase text-muted-foreground font-bold leading-none tracking-[2px]">Em Preparo</span>
               <span className="text-xl font-medium leading-none mt-1">{preparingTables.length}</span>
             </div>
           </Card>
-          <Card className="px-4 py-2 bg-emerald-500/10 border-emerald-500/20 flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+          <Card className="px-4 py-2 bg-card/70 border-border/70 flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-foreground" />
             <div className="flex flex-col">
-              <span className="text-[10px] uppercase text-emerald-500/70 font-bold leading-none">Pronto</span>
+              <span className="text-[10px] uppercase text-muted-foreground font-bold leading-none tracking-[2px]">Pronto</span>
               <span className="text-xl font-medium leading-none mt-1">{readyTables.length}</span>
             </div>
           </Card>
@@ -107,11 +107,11 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table, onRea
   const currentMomentName = table.currentMoment > 0 ? menuMoments[table.currentMoment - 1] : null;
 
   return (
-    <Card className={`overflow-hidden transition-all border-2 duration-300 flex flex-col ${
-      table.status === 'ready' ? 'border-emerald-500/30 bg-emerald-500/5' : 
-      table.status === 'paused' ? 'border-destructive/30 bg-destructive/5' :
-      table.status === 'idle' && table.menu ? 'border-primary/30 bg-primary/5' :
-      'border-amber-500/30 bg-amber-500/5'
+    <Card className={`overflow-hidden transition-all border duration-300 flex flex-col ${
+      table.status === 'ready' ? 'border-border bg-card/90' : 
+      table.status === 'paused' ? 'border-border bg-card/80' :
+      table.status === 'idle' && table.menu ? 'border-border bg-card/80' :
+      'border-border bg-card/90'
     }`}>
       {table.restrictions.type && (
         <div className={`py-1 px-4 text-[10px] font-bold uppercase tracking-widest flex items-center justify-between border-b border-white/10 ${
@@ -126,19 +126,19 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table, onRea
         </div>
       )}
 
-      <CardHeader className="pb-4 border-b border-border/20">
+      <CardHeader className="pb-4 border-b border-border/50">
         <div className="flex justify-between items-center mb-1">
           <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center font-serif text-2xl border-2 ${
-              table.status === 'ready' ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-primary text-primary-foreground border-primary/50'
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl font-light tracking-[2px] border ${
+              table.status === 'ready' ? 'bg-secondary text-foreground border-border' : 'bg-primary text-primary-foreground border-border'
             }`}>
               {table.number}
             </div>
             <div>
-              <CardTitle className="text-lg font-serif">{table.menu}</CardTitle>
+              <CardTitle className="text-lg font-light uppercase tracking-[2px]">{table.menu}</CardTitle>
               <div className="flex items-center justify-between gap-4 w-full">
                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">{table.pairing || 'Aguardando Pairing'}</p>
-                <div className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-2">
+                <div className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-2 tracking-[1px]">
                   <span className="text-primary">{table.pax} PAX</span>
                   <span>-</span>
                   <span className="text-primary">{table.language}</span>
@@ -172,9 +172,9 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table, onRea
 
       <CardFooter className="pt-0 pb-6 px-6">
         <Button 
-          className={`w-full h-14 text-lg font-serif tracking-wide transition-all ${
+          className={`w-full h-14 text-lg font-light uppercase tracking-[3px] transition-all ${
             table.status === 'ready' 
-            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20' 
+            ? 'bg-secondary text-foreground border-border hover:bg-secondary/70' 
             : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg'
           }`}
           disabled={table.status !== 'preparing'}

@@ -236,19 +236,19 @@ export default function Admin() {
 
   // Custom Recharts theme colors based on our CSS variables
   const colors = {
-    primary: "hsl(43 74% 49%)",     // Gold
-    secondary: "hsl(0 0% 80%)",     // Gray
-    emerald: "hsl(160 84% 39%)",    // Emerald
-    destructive: "hsl(0 84% 60%)",  // Red
-    background: "hsl(240 10% 4%)",  // Dark
-    card: "hsl(240 10% 8%)",        // Slightly lighter dark
-    border: "hsl(240 10% 15%)"
+    primary: "hsl(0 0% 82%)",
+    secondary: "hsl(0 0% 62%)",
+    emerald: "hsl(0 0% 46%)",
+    destructive: "hsl(0 0% 56%)",
+    background: "hsl(0 0% 5%)",
+    card: "hsl(0 0% 8%)",
+    border: "hsl(0 0% 18%)"
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto pb-10">
-      <div className="flex items-center justify-between border-b border-border/40 pb-4">
-        <h2 className="text-2xl font-serif text-primary flex items-center">
+      <div className="flex items-center justify-between border-b border-border/60 pb-4">
+        <h2 className="text-2xl font-light uppercase tracking-[3px] text-foreground flex items-center">
           <Settings2 className="w-5 h-5 mr-3" />
           Painel de Gestão & Analytics Avançado
         </h2>
@@ -275,18 +275,18 @@ export default function Admin() {
             <MetricCard title="Mesas em Serviço" value={activeTables.length.toString()} trend="No momento" good={activeTables.length > 0} />
             <MetricCard title="Serviços Finalizados" value={historicalLogs.length.toString()} trend="Hoje" />
             <MetricCard title="Atrasos Detectados" value={delayedTables.length.toString()} trend="> 8 min na cozinha" bad={delayedTables.length > 0} />
-            <Card className="border-border/40 bg-card/60 overflow-hidden relative">
+            <Card className="border-border/60 bg-card/70 overflow-hidden relative">
               <div className="absolute inset-0 bg-primary/5"></div>
               <CardContent className="p-6 relative z-10">
                 <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Mesa Mais Rápida</p>
-                <p className="text-3xl font-serif text-foreground mb-1">{rankedTables.length > 0 ? `Mesa ${rankedTables[0].number}` : '-'}</p>
-                <p className="text-xs font-medium text-emerald-500">Excelente eficiência</p>
+                <p className="text-3xl font-light uppercase tracking-[3px] text-foreground mb-1">{rankedTables.length > 0 ? `Mesa ${rankedTables[0].number}` : '-'}</p>
+                <p className="text-xs font-medium text-muted-foreground">Excelente eficiência</p>
               </CardContent>
             </Card>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-serif text-foreground flex items-center">
+            <h3 className="text-lg font-light uppercase tracking-[2px] text-foreground flex items-center">
               <Clock className="w-5 h-5 mr-2 text-primary" />
               Monitor de Serviço (Tempo Real)
             </h3>
@@ -310,7 +310,7 @@ export default function Admin() {
                           <div className="p-4 bg-background/50 border-b border-border/20 flex justify-between items-center">
                             <div>
                               <span className="text-xs uppercase text-muted-foreground tracking-widest">Mesa {table.number}</span>
-                              <span className="font-serif text-lg text-primary block">{table.menu}</span>
+                              <span className="text-lg font-light uppercase tracking-[2px] text-foreground block">{table.menu}</span>
                             </div>
                             <div className="text-right">
                               <span className="text-xs uppercase text-muted-foreground tracking-widest block">Tempo Total</span>
@@ -330,7 +330,7 @@ export default function Admin() {
                                 </Badge>
                               )}
                               {table.status === 'ready' && (
-                                <Badge className="bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30">
+                                <Badge className="bg-secondary text-foreground hover:bg-secondary/80">
                                   <CheckCircle2 className="w-3 h-3 mr-1" />
                                   Pronto p/ Servir
                                 </Badge>
@@ -396,9 +396,9 @@ export default function Admin() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="border-border/40 bg-card/60 col-span-1 lg:col-span-2">
+            <Card className="border-border/60 bg-card/70 col-span-1 lg:col-span-2">
               <CardHeader>
-                <CardTitle className="font-serif text-lg">
+                <CardTitle className="font-light uppercase tracking-[2px] text-lg">
                   {compareMode ? "Comparativo de Tempo Total por Momento (Minutos)" : "Tempo Médio por Momento (Cozinha vs Sala em Minutos)"}
                 </CardTitle>
                 <CardDescription>
@@ -458,9 +458,9 @@ export default function Admin() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/40 bg-card/60">
+            <Card className="border-border/60 bg-card/70">
               <CardHeader>
-                <CardTitle className="font-serif text-lg">Distribuição de Duração Média (Menus)</CardTitle>
+                <CardTitle className="font-light uppercase tracking-[2px] text-lg">Distribuição de Duração Média (Menus)</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4 mt-2">
@@ -481,7 +481,7 @@ export default function Admin() {
                         </div>
                         <div className="h-2 w-full bg-background rounded-full overflow-hidden">
                           <div 
-                            className={`h-full rounded-full ${avgTime > targetTime ? 'bg-amber-500' : 'bg-emerald-500'}`} 
+                            className={`h-full rounded-full ${avgTime > targetTime ? 'bg-muted-foreground' : 'bg-primary'}`} 
                             style={{ width: `${menuServices.length ? progress : 0}%` }}
                           />
                         </div>
@@ -493,9 +493,9 @@ export default function Admin() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/40 bg-card/60">
+            <Card className="border-border/60 bg-card/70">
               <CardHeader>
-                <CardTitle className="font-serif text-lg">Histórico Recente de Mesas</CardTitle>
+                <CardTitle className="font-light uppercase tracking-[2px] text-lg">Histórico Recente de Mesas</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 mt-2">
@@ -509,7 +509,7 @@ export default function Admin() {
                           <p className="text-[10px] text-muted-foreground uppercase">{log.menuName}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-mono text-sm text-primary">{formatDuration(log.endTime - log.startTime)}</p>
+                          <p className="font-mono text-sm text-foreground">{formatDuration(log.endTime - log.startTime)}</p>
                           <p className="text-[10px] text-muted-foreground">{new Date(log.endTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                         </div>
                       </div>
@@ -524,13 +524,13 @@ export default function Admin() {
         <TabsContent value="menus" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Menu Management (Unchanged from before) */}
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="text-lg font-serif text-foreground">Menus Cadastrados</h3>
+            <h3 className="text-lg font-light uppercase tracking-[2px] text-foreground">Menus Cadastrados</h3>
             {menus.map((menu) => (
               <Card key={menu.id} className={`border-border/40 transition-colors ${menu.isActive ? 'border-primary/50 bg-primary/5' : 'bg-card/40'}`}>
                 <CardContent className="p-6 flex flex-col sm:flex-row justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <h4 className="text-xl font-serif text-foreground">{menu.name}</h4>
+                      <h4 className="text-xl font-light uppercase tracking-[2px] text-foreground">{menu.name}</h4>
                       {menu.isActive && <span className="bg-primary/20 text-primary text-[10px] uppercase px-2 py-0.5 rounded border border-primary/30">Ativo</span>}
                     </div>
                     <p className="text-sm text-muted-foreground mb-4">
@@ -567,7 +567,7 @@ export default function Admin() {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-serif text-foreground">Criar Novo Menu</h3>
+            <h3 className="text-lg font-light uppercase tracking-[2px] text-foreground">Criar Novo Menu</h3>
             <Card className="border-border/40 bg-card/60">
               <CardContent className="p-6 space-y-4">
                 <div className="space-y-2">
@@ -632,11 +632,11 @@ function UtensilsIcon(props: any) {
 
 function MetricCard({ title, value, trend, good, bad }: any) {
   return (
-    <Card className="border-border/40 bg-card/60">
+    <Card className="border-border/60 bg-card/70">
       <CardContent className="p-6">
         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">{title}</p>
-        <p className="text-3xl font-serif text-foreground mb-2">{value}</p>
-        <p className={`text-xs font-medium ${good ? 'text-emerald-500' : bad ? 'text-destructive' : 'text-muted-foreground'}`}>
+        <p className="text-3xl font-light uppercase tracking-[3px] text-foreground mb-2">{value}</p>
+        <p className={`text-xs font-medium ${good ? 'text-foreground' : bad ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
           {trend}
         </p>
       </CardContent>

@@ -108,7 +108,8 @@ async function setupRoutes() {
     await registerRoutes(httpServer, app);
     console.log("Rotas registradas");
   } catch (err) {
-    console.warn("Erro ao registrar rotas:", err);
+    console.error("Erro ao registrar rotas:", err);
+    throw err;
   }
 }
 

@@ -6,6 +6,7 @@ import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check, Setti
 import { Badge } from "@/components/ui/badge";
 import { 
   Dialog, 
+  DialogClose,
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
@@ -157,16 +158,16 @@ export default function Sala() {
       <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto w-full">
         <div className="flex items-center justify-between border-b border-border/40 pb-2 mb-6">
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-serif text-primary">Mapa do Salão</h2>
+            <h2 className="text-xl font-light uppercase tracking-[3px] text-foreground">Mapa do Salão</h2>
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary h-8 w-8">
+                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground h-8 w-8">
                   <Settings className="w-5 h-5" />
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-card border-border">
                 <DialogHeader>
-                  <DialogTitle className="font-serif text-primary">Configurações</DialogTitle>
+                  <DialogTitle className="text-base font-light uppercase tracking-[2px] text-foreground">Configurações</DialogTitle>
                 </DialogHeader>
                 <div className="py-6 space-y-6">
                   <div className="flex items-center justify-between">
@@ -256,7 +257,7 @@ export default function Sala() {
                   onClick={() => handleSelectTable(table.id)}
                   data-testid={`map-table-${table.number}`}
                 >
-                  <span className="font-serif text-lg sm:text-xl font-medium tracking-tighter">{table.number}</span>
+                  <span className="text-lg sm:text-xl font-light tracking-[2px]">{table.number}</span>
                   {(hasActiveService || isSeated) && !isPreparing && !isReady && (
                     <span className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#1a1b1e] ${isSeated ? 'bg-red-500' : 'bg-primary'}`} />
                   )}
@@ -295,7 +296,7 @@ export default function Sala() {
           </Button>
           <div>
             <span className="text-xs uppercase tracking-widest text-muted-foreground block mb-1">Mesa</span>
-            <h2 className="text-3xl font-serif text-primary">{selectedTable.number}</h2>
+            <h2 className="text-3xl font-light uppercase tracking-[4px] text-foreground">{selectedTable.number}</h2>
           </div>
         </div>
 
@@ -309,7 +310,7 @@ export default function Sala() {
             </DialogTrigger>
             <DialogContent className="bg-card border-border sm:max-w-md">
               <DialogHeader>
-                <DialogTitle className="font-serif text-primary flex items-center gap-2">
+                <DialogTitle className="text-base font-light uppercase tracking-[2px] text-foreground flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5" /> Restrições da Mesa {selectedTable.number}
                 </DialogTitle>
               </DialogHeader>
@@ -364,7 +365,9 @@ export default function Sala() {
                   <p className="text-muted-foreground">Tem certeza que deseja encerrar o serviço da mesa {selectedTable.number} antecipadamente?</p>
                 </div>
                 <div className="flex gap-3 justify-end">
-                  <Button variant="outline" className="border-border">Cancelar</Button>
+                  <DialogClose asChild>
+                    <Button variant="outline" className="border-border">Cancelar</Button>
+                  </DialogClose>
                   <Button variant="destructive" onClick={handleForceFinish}>Encerrar Serviço</Button>
                 </div>
               </DialogContent>
@@ -385,7 +388,7 @@ export default function Sala() {
                 onClick={() => handleSelectMenu(menu.id)}
                 data-testid={`button-menu-${menu.id}`}
               >
-                <span className="font-serif text-lg">{menu.name}</span>
+                <span className="text-[13px] uppercase tracking-[3px]">{menu.name}</span>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </Button>
             ))}
@@ -437,7 +440,7 @@ export default function Sala() {
 
           <div className="flex flex-col items-center pt-4">
             <Button 
-              className="w-full h-16 bg-primary text-primary-foreground text-xl font-serif shadow-lg group"
+              className="w-full h-16 bg-primary text-primary-foreground text-xl font-light uppercase tracking-[3px] shadow-lg group"
               onClick={handleSeated}
               data-testid="button-seated"
             >
@@ -463,7 +466,7 @@ export default function Sala() {
                 onClick={() => handleSelectPairing(pairing)}
                 data-testid={`button-pairing-${pairing.replace(/\s+/g, '-').toLowerCase()}`}
               >
-                <span className="font-serif text-lg">{pairing}</span>
+                <span className="text-[13px] uppercase tracking-[3px]">{pairing}</span>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </Button>
             ))}
@@ -478,7 +481,7 @@ export default function Sala() {
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <CardTitle className="font-serif text-2xl text-primary">{selectedTable.menu}</CardTitle>
+                    <CardTitle className="text-2xl font-light uppercase tracking-[3px] text-foreground">{selectedTable.menu}</CardTitle>
                     <Badge variant="outline" className="text-[10px] h-5 border-primary/20 text-primary/80">
                       {selectedTable.pax} PAX • {selectedTable.language}
                     </Badge>
@@ -506,7 +509,7 @@ export default function Sala() {
                 )}
                 
                 <span className="text-xs uppercase tracking-widest text-muted-foreground mb-3 relative z-10">Momento Atual</span>
-                <div className="text-6xl font-serif text-foreground mb-2 relative z-10 drop-shadow-md">
+                <div className="text-6xl font-light text-foreground mb-2 relative z-10 drop-shadow-md">
                   {getMomentDisplay(selectedTable.currentMoment, selectedTable.totalMoments)} 
                   <span className="text-muted-foreground/50 text-4xl"> / {selectedTable.totalMoments}</span>
                 </div>

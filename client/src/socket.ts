@@ -10,7 +10,7 @@ const getSocketURL = () => {
     const { protocol, hostname, port } = window.location;
 
     // In dev, Vite runs on 5000 while the API/socket server listens on 3000.
-    if (hostname === "localhost") {
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
       return `${protocol}//${hostname}:3000`;
     }
 

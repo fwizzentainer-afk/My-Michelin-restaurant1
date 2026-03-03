@@ -1,11 +1,11 @@
 import socket from "./socket";
 import { Switch, Route, useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { StoreProvider, useStore } from "@/lib/store";
+import { Role, StoreProvider, useStore } from "@/lib/store";
 import Layout from "@/components/layout";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
@@ -53,30 +53,77 @@ function Router() {
   );
 }
 
-function App() {
+function AppShell() {
+  const { login } = useStore();
+  const [, setLocation] = useLocation();
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const bootstrapSession = async () => {
+      try {
+        const res = await fetch("/api/me", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          const role = data?.role as Role;
+          if (role === "admin" || role === "sala" || role === "cozinha") {
+            login(role);
+            if (window.location.pathname === "/") {
+              setLocation(`/${role}`);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Falha ao restaurar sessão:", err);
+      } finally {
+        if (!cancelled) setAuthChecked(true);
+      }
+    };
+
+    void bootstrapSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     console.log("Socket iniciado:", socket);
 
-    socket.on("connect", () => {
+    const onConnect = () => {
       console.log("Conectado ao servidor:", socket.id);
-    });
+    };
 
-    socket.on("disconnect", () => {
+    const onDisconnect = () => {
       console.log("Desconectado do servidor");
-    });
+    };
+
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
 
     return () => {
-      socket.disconnect();
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
     };
   }, []);
+
+  if (!authChecked) return null;
+
+  return (
+    <TooltipProvider>
+      <Toaster />
+      <Router />
+    </TooltipProvider>
+  );
+}
+
+function App() {
   
   return (
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <AppShell />
       </StoreProvider>
     </QueryClientProvider> 
    );

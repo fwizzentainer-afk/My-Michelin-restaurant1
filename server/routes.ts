@@ -16,6 +16,11 @@ export async function registerRoutes(
   app: Express,
 ): Promise<Server> {
   const router = express.Router();
+  const toPublicUser = (user: { id: string; username: string; role: string }) => ({
+    id: user.id,
+    username: user.username,
+    role: user.role,
+  });
 
   const requireAuth: express.RequestHandler = (req, res, next) => {
     if (!req.session.userId) {
@@ -79,14 +84,14 @@ export async function registerRoutes(
     }
 
     const user = await storage.createUser(parsed.data);
-    return res.status(201).json(user);
+    return res.status(201).json(toPublicUser(user));
   });
 
   // Fetch user by username (simple demo route)
   router.get("/users/:username", requireAdmin, async (req, res) => {
     const user = await storage.getUserByUsername(req.params.username as string);
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
-    return res.json(user);
+    return res.json(toPublicUser(user));
   });
 
   // Menus
