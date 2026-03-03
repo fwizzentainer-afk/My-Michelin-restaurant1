@@ -58,7 +58,7 @@ export default function Login() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background z-0" />
       
       <Card className="w-full max-w-4xl border-border bg-[#0d131d]/88 backdrop-blur-xl relative z-10 shadow-[0_30px_80px_rgba(0,0,0,0.55)] overflow-hidden rounded-2xl">
-        <CardHeader className="space-y-4 text-center pb-6 pt-10">
+        <CardHeader className="space-y-4 text-center pb-8 pt-12">
           <div className="mx-auto w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border border-primary/30 mb-2">
             <UtensilsCrossed className="w-8 h-8 text-primary" />
           </div>
@@ -71,7 +71,7 @@ export default function Login() {
         </CardHeader>
         
         {!selectedRole ? (
-          <CardContent className="space-y-4 px-6 sm:px-12 pb-10 animate-in slide-in-from-left-4 duration-300">
+          <CardContent className="space-y-5 px-6 sm:px-12 pb-12 animate-in slide-in-from-left-4 duration-300">
             <Button 
               variant="outline" 
               className="w-full h-24 text-lg justify-start px-6 border-border bg-[#0b1119] hover:border-primary/50 hover:bg-primary/5"
@@ -119,7 +119,7 @@ export default function Login() {
           </CardContent>
         ) : (
           <form onSubmit={handleLogin} className="animate-in slide-in-from-right-4 duration-300">
-            <CardContent className="space-y-6 px-6 pb-6">
+            <CardContent className="space-y-6 px-6 sm:px-12 pb-6">
               <div className="flex items-center text-primary mb-4 cursor-pointer hover:underline" onClick={() => setSelectedRole(null)}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 <span className="text-sm">Voltar às opções</span>
@@ -155,7 +155,7 @@ export default function Login() {
                 />
               </div>
             </CardContent>
-            <CardFooter className="px-6 pb-10">
+            <CardFooter className="px-6 sm:px-12 pb-12">
               <Button type="submit" className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/90 font-medium tracking-wide text-lg" data-testid="button-login-admin">
                 Entrar
               </Button>

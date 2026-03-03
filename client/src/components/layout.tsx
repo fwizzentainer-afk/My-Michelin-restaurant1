@@ -42,7 +42,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 container max-w-screen-2xl px-0 py-6 md:py-8 flex flex-col">
+      <main className="flex-1 container max-w-screen-2xl px-0 py-8 md:py-10 flex flex-col">
         {children}
       </main>
 

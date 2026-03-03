@@ -15,6 +15,13 @@ export function PremiumCard({
   return <div className={cn("ds-card", className)} {...props} />;
 }
 
+export function SectionCard({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("ds-card p-6 sm:p-8", className)} {...props} />;
+}
+
 export function StatusBadge({
   tone = "idle",
   className,

@@ -159,8 +159,8 @@ export default function Sala() {
 
   if (!selectedTableId) {
     return (
-      <AppContainer className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="flex flex-col gap-5 border-b border-border pb-5 mb-6 px-3 sm:px-0">
+      <AppContainer className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500 pb-6">
+        <div className="flex flex-col gap-5 border-b border-border pb-6 mb-7 px-3 sm:px-0">
           <div className="flex items-center justify-between">
             <h2 className="text-5xl sm:text-6xl font-bold leading-[0.95] text-primary">Mapa do Salão</h2>
             <Dialog>
@@ -298,8 +298,8 @@ export default function Sala() {
   const currentMomentName = selectedTable.momentsHistory.find(h => h.momentNumber === selectedTable.currentMoment)?.momentName;
 
   return (
-    <AppContainer className="space-y-6 max-w-3xl animate-in fade-in duration-300">
-      <div className="flex items-center justify-between border-b border-border/40 pb-4">
+    <AppContainer className="space-y-7 max-w-3xl animate-in fade-in duration-300 pb-6">
+      <div className="flex items-center justify-between border-b border-border/40 pb-5">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary" onClick={() => setSelectedTableId(null)}>
             <ArrowLeft className="w-5 h-5" />

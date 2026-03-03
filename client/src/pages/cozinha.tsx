@@ -33,21 +33,21 @@ export default function Cozinha() {
   };
 
   return (
-    <AppContainer className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
+    <AppContainer className="space-y-8 animate-in fade-in duration-500 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 border-b border-border/40 pb-6">
         <div>
           <h2 className="text-4xl font-bold text-primary">Painel da Cozinha</h2>
           <p className="text-muted-foreground text-sm uppercase tracking-[0.18em] mt-1">Gestão de Comandas em Tempo Real</p>
         </div>
         <div className="flex gap-4">
-          <PremiumCard className="px-4 py-2 bg-amber-500/10 border-amber-500/20 flex items-center gap-3">
+          <PremiumCard className="px-5 py-3 bg-amber-500/10 border-amber-500/20 flex items-center gap-3">
             <Clock className="w-5 h-5 text-amber-500" />
             <div className="flex flex-col">
               <span className="text-[10px] uppercase text-amber-500/70 font-bold leading-none">Em Preparo</span>
               <span className="text-xl font-medium leading-none mt-1">{preparingTables.length}</span>
             </div>
           </PremiumCard>
-          <PremiumCard className="px-4 py-2 bg-emerald-500/10 border-emerald-500/20 flex items-center gap-3">
+          <PremiumCard className="px-5 py-3 bg-emerald-500/10 border-emerald-500/20 flex items-center gap-3">
             <CheckCircle2 className="w-5 h-5 text-emerald-500" />
             <div className="flex flex-col">
               <span className="text-[10px] uppercase text-emerald-500/70 font-bold leading-none">Pronto</span>
@@ -57,7 +57,7 @@ export default function Cozinha() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
         {activeTables.length === 0 ? (
           <div className="col-span-full flex flex-col items-center justify-center py-20 bg-card/20 rounded-2xl border-2 border-dashed border-border/40">
             <Utensils className="w-12 h-12 text-muted-foreground/30 mb-4" />

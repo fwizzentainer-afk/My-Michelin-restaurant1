@@ -424,8 +424,8 @@ export default function Admin() {
   };
 
   return (
-    <AppContainer className="space-y-6 animate-in fade-in duration-500 pb-10">
-      <div className="flex items-center justify-between border-b border-border/40 pb-4">
+    <AppContainer className="space-y-8 animate-in fade-in duration-500 pb-12">
+      <div className="flex items-center justify-between border-b border-border/40 pb-5">
         <h2 className="text-3xl font-bold text-primary flex items-center">
           <Settings2 className="w-5 h-5 mr-3" />
           Painel de Gestão & Analytics Avançado
@@ -433,7 +433,7 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="analytics" className="w-full">
-        <TabsList className="grid h-14 w-full max-w-2xl grid-cols-4 rounded-2xl bg-card/70 border border-border/70 mb-6 p-1">
+        <TabsList className="grid h-14 w-full max-w-2xl grid-cols-4 rounded-2xl bg-card/70 border border-border/70 mb-7 p-1">
           <TabsTrigger value="realtime" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
             <Clock className="w-4 h-4 mr-2" />
             Tempo Real
@@ -452,8 +452,8 @@ export default function Admin() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="realtime" className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <TabsContent value="realtime" className="space-y-7">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <MetricCard title="Mesas em Serviço" value={activeTables.length.toString()} trend="No momento" good={activeTables.length > 0} />
             <MetricCard title="Serviços Finalizados" value={historicalLogs.length.toString()} trend="Hoje" />
             <MetricCard title="Atrasos Detectados" value={delayedTables.length.toString()} trend="> 8 min na cozinha" bad={delayedTables.length > 0} />
