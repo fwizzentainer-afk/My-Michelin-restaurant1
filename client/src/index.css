@@ -4,26 +4,26 @@
 
 @layer base {
   :root {
-    --font-sans: "Manrope";
-    --background: 222 47% 8%;
-    --foreground: 210 40% 96%;
-    --card: 222 38% 11%;
-    --card-foreground: 210 40% 96%;
-    --popover: 222 38% 11%;
-    --popover-foreground: 210 40% 96%;
-    --primary: 42 94% 58%;
-    --primary-foreground: 222 47% 8%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 96%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 70%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 96%;
-    --destructive: 0 63% 48%;
-    --destructive-foreground: 210 40% 96%;
-    --border: 217 22% 22%;
-    --input: 217 22% 22%;
-    --ring: 42 94% 58%;
+    --font-sans: "Inter";
+    --background: 228 36% 4%;
+    --foreground: 214 20% 96%;
+    --card: 228 34% 6%;
+    --card-foreground: 214 20% 96%;
+    --popover: 228 34% 6%;
+    --popover-foreground: 214 20% 96%;
+    --primary: 45 89% 47%;
+    --primary-foreground: 228 36% 4%;
+    --secondary: 225 18% 13%;
+    --secondary-foreground: 214 20% 96%;
+    --muted: 225 18% 13%;
+    --muted-foreground: 229 11% 63%;
+    --accent: 225 18% 13%;
+    --accent-foreground: 214 20% 96%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 214 20% 96%;
+    --border: 228 26% 13%;
+    --input: 228 26% 13%;
+    --ring: 45 89% 47%;
     --radius: 0.75rem;
   }
 
@@ -40,9 +40,8 @@
   body {
     @apply bg-background text-foreground antialiased;
     background-image:
-      radial-gradient(1200px 600px at -20% -20%, hsl(42 94% 58% / 0.11), transparent 50%),
-      radial-gradient(1000px 500px at 120% 0%, hsl(211 100% 58% / 0.09), transparent 45%),
-      linear-gradient(180deg, hsl(222 47% 9%), hsl(222 47% 7%));
+      radial-gradient(900px 500px at 50% -20%, hsl(45 89% 47% / 0.08), transparent 42%),
+      linear-gradient(180deg, hsl(228 36% 5%), hsl(228 36% 4%));
     background-attachment: fixed;
     font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
   }
