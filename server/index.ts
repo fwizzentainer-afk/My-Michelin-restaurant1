@@ -209,7 +209,16 @@ async function startServer() {
         "admin",
       );
     } else {
-      console.warn("ADMIN_PASSWORD não definido - defina para criar o usuário admin");
+      if (isDev) {
+        const devAdminUser = process.env.ADMIN_USER || "admin";
+        const devAdminPassword = "admin123";
+        await ensureAdminUser(devAdminUser, devAdminPassword, "admin");
+        console.warn(
+          `ADMIN_PASSWORD não definido - usando credenciais de desenvolvimento (${devAdminUser}/${devAdminPassword})`,
+        );
+      } else {
+        console.warn("ADMIN_PASSWORD não definido - defina para criar o usuário admin");
+      }
     }
 
     await setupRoutes();
