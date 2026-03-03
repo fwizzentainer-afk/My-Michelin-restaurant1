@@ -53,66 +53,66 @@ export default function Login() {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center -mt-10 animate-in fade-in duration-700">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/5 via-background to-background z-0" />
+    <div className="flex-1 flex items-center justify-center -mt-2 animate-in fade-in duration-700 px-3 sm:px-0">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background z-0" />
       
-      <Card className="w-full max-w-md border-border/40 bg-card/60 backdrop-blur-xl relative z-10 shadow-2xl shadow-black/50 overflow-hidden">
+      <Card className="w-full max-w-4xl border-border bg-[#070911]/90 backdrop-blur-xl relative z-10 shadow-[0_30px_80px_rgba(0,0,0,0.55)] overflow-hidden rounded-2xl">
         <CardHeader className="space-y-4 text-center pb-6 pt-10">
-          <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 mb-2">
+          <div className="mx-auto w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border border-primary/30 mb-2">
             <UtensilsCrossed className="w-8 h-8 text-primary" />
           </div>
           <div>
-            <CardTitle className="font-serif text-3xl mb-2 text-foreground">Acesso ao Sistema</CardTitle>
-            <CardDescription className="text-muted-foreground tracking-wide uppercase text-xs">
+            <CardTitle className="text-4xl sm:text-5xl mb-2 text-foreground">Acesso ao Sistema</CardTitle>
+            <CardDescription className="text-muted-foreground tracking-[0.18em] uppercase text-sm">
               My Michelin Restaurant
             </CardDescription>
           </div>
         </CardHeader>
         
         {!selectedRole ? (
-          <CardContent className="space-y-4 px-6 pb-10 animate-in slide-in-from-left-4 duration-300">
+          <CardContent className="space-y-4 px-6 sm:px-12 pb-10 animate-in slide-in-from-left-4 duration-300">
             <Button 
               variant="outline" 
-              className="w-full h-20 text-lg justify-start px-6 border-border/40 hover:border-primary/50 hover:bg-primary/5"
+              className="w-full h-24 text-lg justify-start px-6 border-border bg-[#070911] hover:border-primary/50 hover:bg-primary/5"
               onClick={() => handleRoleSelect("sala")}
               data-testid="btn-role-sala"
             >
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mr-4 border border-primary/20">
                 <UtensilsCrossed className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left flex-1">
-                <span className="font-serif text-xl block">Sala</span>
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Máx. 5 Dispositivos</span>
+                <span className="text-2xl sm:text-3xl block">Sala</span>
+                <span className="text-sm text-muted-foreground uppercase tracking-[0.14em]">Máx. 5 Dispositivos</span>
               </div>
             </Button>
 
             <Button 
               variant="outline" 
-              className="w-full h-20 text-lg justify-start px-6 border-border/40 hover:border-primary/50 hover:bg-primary/5"
+              className="w-full h-24 text-lg justify-start px-6 border-border bg-[#070911] hover:border-primary/50 hover:bg-primary/5"
               onClick={() => handleRoleSelect("cozinha")}
               data-testid="btn-role-cozinha"
             >
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mr-4 border border-primary/20">
                 <ChefHat className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left flex-1">
-                <span className="font-serif text-xl block">Cozinha</span>
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Máx. 2 Dispositivos</span>
+                <span className="text-2xl sm:text-3xl block">Cozinha</span>
+                <span className="text-sm text-muted-foreground uppercase tracking-[0.14em]">Máx. 2 Dispositivos</span>
               </div>
             </Button>
 
             <Button 
               variant="outline" 
-              className="w-full h-20 text-lg justify-start px-6 border-border/40 hover:border-primary/50 hover:bg-primary/5"
+              className="w-full h-24 text-lg justify-start px-6 border-border bg-[#070911] hover:border-primary/50 hover:bg-primary/5"
               onClick={() => handleRoleSelect("admin")}
               data-testid="btn-role-admin"
             >
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mr-4 border border-primary/20">
                 <Shield className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left flex-1">
-                <span className="font-serif text-xl block">Admin</span>
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Gestão do Sistema</span>
+                <span className="text-2xl sm:text-3xl block">Admin</span>
+                <span className="text-sm text-muted-foreground uppercase tracking-[0.14em]">Gestão do Sistema</span>
               </div>
             </Button>
           </CardContent>

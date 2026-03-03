@@ -20,21 +20,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-primary/30">
-      <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
+    <div className="min-h-screen flex flex-col bg-background/80 text-foreground selection:bg-primary/30">
+      <header className="sticky top-0 z-20 border-b border-border bg-[#090c14]/85 backdrop-blur-xl">
+        <div className="container flex h-16 max-w-screen-2xl items-center justify-between px-3 sm:px-4">
           <div className="flex items-center gap-2">
-            <span className="font-serif text-lg font-semibold tracking-tight text-primary">
+            <span className="text-4xl font-bold tracking-tight text-primary sm:text-[2.2rem]">
               My Michelin Restaurant
             </span>
           </div>
 
           {role && (
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground uppercase tracking-wider hidden sm:inline-block">
+              <span className="text-xs text-muted-foreground uppercase tracking-[0.2em] hidden sm:inline-block">
                 Role: <span className="text-foreground font-medium">{role}</span>
               </span>
-              <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair">
+              <Button variant="ghost" size="icon" className="text-foreground hover:bg-secondary/80" onClick={handleLogout} title="Sair">
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -42,19 +42,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 container max-w-screen-2xl py-6 md:py-10 flex flex-col">
+      <main className="flex-1 container max-w-screen-2xl px-0 py-6 md:py-8 flex flex-col">
         {children}
       </main>
 
-      <footer className="border-t border-border/40 py-4 md:py-6 relative z-10 bg-background">
-        <div className="container flex flex-col md:flex-row items-center justify-between gap-4 max-w-screen-2xl">
-          <p className="text-xs text-muted-foreground uppercase tracking-widest text-center md:text-left">
+      <footer className="border-t border-border py-4 md:py-6 relative z-10 bg-[#070910]/90 backdrop-blur-md">
+        <div className="container flex flex-col md:flex-row items-center justify-between gap-4 max-w-screen-2xl px-3 sm:px-4">
+          <p className="text-xs text-muted-foreground uppercase tracking-[0.22em] text-center md:text-left">
             Sistema Interno - Rede Wi-Fi Local
           </p>
 
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary transition-colors">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary hover:bg-secondary/80 transition-colors">
                 <Info className="h-4 w-4 mr-2" />
                 Sobre o Sistema
               </Button>
