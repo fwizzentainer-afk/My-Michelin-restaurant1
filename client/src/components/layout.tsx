@@ -1,4 +1,4 @@
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Info, LogOut } from "lucide-react";
@@ -20,21 +20,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0b0f14] text-foreground selection:bg-primary/30">
-      <header className="sticky top-0 z-20 border-b border-border/70 bg-[#0a0f17]/90 backdrop-blur-xl">
-        <div className="container flex h-[4.25rem] max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-primary/30">
+      <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-[1.95rem] font-bold tracking-tight text-primary sm:text-[2.2rem]">
+            <span className="font-inter text-lg font-semibold tracking-tight text-primary">
               My Michelin Restaurant
             </span>
           </div>
 
           {role && (
             <div className="flex items-center gap-4">
-              <span className="text-xs text-muted-foreground uppercase tracking-[0.2em] hidden sm:inline-block">
+              <span className="text-sm text-muted-foreground uppercase tracking-wider hidden sm:inline-block">
                 Role: <span className="text-foreground font-medium">{role}</span>
               </span>
-              <Button variant="ghost" size="icon" className="text-foreground hover:bg-secondary/80" onClick={handleLogout} title="Sair">
+              <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair">
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -42,26 +42,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 container max-w-screen-2xl px-0 py-8 md:py-10 flex flex-col">
+      <main className="flex-1 container max-w-screen-2xl py-6 md:py-10 flex flex-col">
         {children}
       </main>
 
-      <footer className="border-t border-border py-4 md:py-6 relative z-10 bg-[#070910]/90 backdrop-blur-md">
-        <div className="container flex flex-col md:flex-row items-center justify-between gap-4 max-w-screen-2xl px-4 sm:px-6 lg:px-8">
-          <p className="text-xs text-muted-foreground uppercase tracking-[0.22em] text-center md:text-left">
+      <footer className="border-t border-border/40 py-4 md:py-6 relative z-10 bg-background">
+        <div className="container flex flex-col md:flex-row items-center justify-between gap-4 max-w-screen-2xl">
+          <p className="text-xs text-muted-foreground uppercase tracking-widest text-center md:text-left">
             Sistema Interno - Rede Wi-Fi Local
           </p>
 
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary hover:bg-secondary/80 transition-colors">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary transition-colors">
                 <Info className="h-4 w-4 mr-2" />
                 Sobre o Sistema
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] border-border/40 bg-card">
               <DialogHeader>
-                <DialogTitle className="font-serif text-2xl text-primary">My Michelin Restaurant</DialogTitle>
+                <DialogTitle className="font-inter text-2xl text-primary">My Michelin Restaurant</DialogTitle>
               </DialogHeader>
               <div className="flex flex-col gap-4 py-4 text-sm text-muted-foreground">
                 <div className="grid grid-cols-3 gap-2 border-b border-border/40 pb-2">

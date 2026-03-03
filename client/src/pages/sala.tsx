@@ -14,7 +14,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { AppContainer, PremiumCard, StatusBadge } from "@/components/design-system";
 
 export default function Sala() {
   const { tables, menus, pairings, updateTable, finishService, triggerNotification, settings, updateSettings } = useStore();
@@ -159,13 +158,13 @@ export default function Sala() {
 
   if (!selectedTableId) {
     return (
-      <AppContainer className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500 pb-6">
-        <div className="flex flex-col gap-5 border-b border-border pb-6 mb-7 px-3 sm:px-0">
-          <div className="flex items-center justify-between">
-            <h2 className="text-5xl sm:text-6xl font-bold leading-[0.95] text-primary">Mapa do Salão</h2>
+      <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto w-full">
+        <div className="flex items-center justify-between border-b border-border/40 pb-2 mb-6">
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-serif text-primary">Mapa do Salão</h2>
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary h-10 w-10">
+                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary h-8 w-8">
                   <Settings className="w-5 h-5" />
                 </Button>
               </DialogTrigger>
@@ -191,20 +190,19 @@ export default function Sala() {
               </DialogContent>
             </Dialog>
           </div>
-
-          <div className="flex flex-wrap gap-2 sm:gap-3">
-            <StatusBadge tone="idle">Livre</StatusBadge>
-            <StatusBadge tone="active">Em Serviço</StatusBadge>
-            <StatusBadge tone="preparing">Prepara</StatusBadge>
-            <StatusBadge tone="ready">Pronto</StatusBadge>
-            <StatusBadge tone="idle">Sentada</StatusBadge>
+          <div className="flex flex-wrap gap-2 sm:gap-3 text-[9px] sm:text-xs text-muted-foreground uppercase tracking-widest justify-end">
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-card border border-border" /> Livre</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-600 border border-red-500" /> Sentada</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary/10 border border-primary/50" /> Em Serviço</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500/20 border border-amber-500" /> Prepara</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500" /> Pronto</div>
           </div>
         </div>
         
-        <PremiumCard className="relative w-full aspect-[3/4] sm:aspect-square md:aspect-video lg:aspect-[16/10] max-h-[75vh] bg-[#11151f] overflow-hidden">
-          <div className="absolute inset-0 opacity-35" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
+        <div className="relative w-full aspect-[3/4] sm:aspect-square md:aspect-video lg:aspect-[16/10] max-h-[75vh] bg-[#1a1b1e] rounded-xl border border-border/20 overflow-hidden shadow-2xl">
+          <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
           
-          <div className="absolute top-0 left-0 w-[26%] h-14 bg-[#1a1f2d]/90 border-b border-r border-border rounded-br-3xl flex items-center justify-center text-xs uppercase tracking-[0.2em] text-muted-foreground shadow-inner backdrop-blur-sm z-10">
+          <div className="absolute top-0 left-0 w-[25%] h-12 bg-secondary/80 border-b border-r border-border/40 rounded-br-2xl flex items-center justify-center text-xs uppercase tracking-widest text-muted-foreground shadow-inner backdrop-blur-sm z-10">
             Cozinha
           </div>
 
@@ -215,47 +213,42 @@ export default function Sala() {
             const isReady = table.status === 'ready';
 
             let shapeClass = "flex items-center justify-center cursor-pointer transition-all duration-300 shadow-xl border-2 hover:scale-105 active:scale-95 absolute z-20";
-            let colorClass = "border-border/40 bg-[#222737] text-foreground hover:border-primary/50";
+            let colorClass = "border-border/30 bg-[#25262b] text-foreground hover:border-primary/40";
             
             if (isPreparing) {
-              colorClass = "border-amber-500 bg-amber-500/10 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.25)]";
+              colorClass = "border-amber-500 bg-amber-500/10 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]";
             } else if (isReady) {
               colorClass = "border-emerald-500 bg-emerald-500/20 text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]";
             } else if (hasActiveService) {
-              colorClass = "border-primary/60 bg-primary/15 text-primary shadow-[0_0_15px_rgba(212,175,55,0.2)]";
+              colorClass = "border-primary/60 bg-primary/10 text-primary shadow-[0_0_15px_rgba(212,175,55,0.15)]";
             } else if (isSeated) {
-              colorClass = "border-[#3f465c] bg-[#1f2433] text-slate-100 shadow-[0_0_15px_rgba(20,24,35,0.35)]";
+              colorClass = "border-red-500 bg-red-600/20 text-red-500 shadow-[0_0_15px_rgba(220,38,38,0.2)]";
             }
 
             const style: React.CSSProperties = {};
 
-            if (['10', '11', '20', '21', '40', '41', '50', '51', '52', '53', '54', '55', '56'].includes(table.number)) {
-              shapeClass += " rounded-full w-[11%] h-[11%] min-w-[48px] min-h-[48px] max-w-[86px] max-h-[86px]";
-              if (table.number === '50') { style.top = '9%'; style.left = '6%'; }
-              else if (table.number === '51') { style.top = '9%'; style.left = '18%'; }
-              else if (table.number === '52') { style.top = '9%'; style.left = '30%'; }
-              else if (table.number === '53') { style.top = '9%'; style.left = '42%'; }
-              else if (table.number === '54') { style.top = '9%'; style.left = '54%'; }
-              else if (table.number === '55') { style.top = '9%'; style.left = '66%'; }
-              else if (table.number === '56') { style.top = '9%'; style.left = '78%'; }
-              else if (table.number === '10') { style.top = '36%'; style.left = '8%'; }
-              else if (table.number === '20') { style.top = '32%'; style.left = '30%'; }
-              else if (table.number === '40') { style.top = '32%'; style.left = '56%'; }
-              else if (table.number === '11') { style.top = '52%'; style.left = '20%'; }
-              else if (table.number === '21') { style.top = '52%'; style.left = '45%'; }
-              else if (table.number === '41') { style.top = '52%'; style.left = '70%'; }
+            if (['10', '11', '20', '21', '40', '41', '50'].includes(table.number)) {
+              shapeClass += " rounded-full w-[12%] h-[12%] min-w-[50px] min-h-[50px] max-w-[80px] max-h-[80px]";
+              if (table.number === '10') { style.top = '45%'; style.left = '10%'; }
+              else if (table.number === '11') { style.top = '65%'; style.left = '12%'; }
+              else if (table.number === '20') { style.top = '35%'; style.left = '35%'; }
+              else if (table.number === '21') { style.top = '58%'; style.left = '33%'; }
+              else if (table.number === '40') { style.top = '35%'; style.left = '62%'; }
+              else if (table.number === '41') { style.top = '58%'; style.left = '60%'; }
+              else if (table.number === '50') { style.top = '12%'; style.left = '65%'; }
             }
             else if (['1', '2', '3'].includes(table.number)) {
-              shapeClass += " rounded-xl w-[16%] h-[8%] min-w-[70px] min-h-[40px] max-w-[120px] max-h-[60px]";
-              style.bottom = '10%';
+              shapeClass += " rounded-lg w-[16%] h-[8%] min-w-[70px] min-h-[40px] max-w-[120px] max-h-[60px]";
+              style.bottom = '8%';
               if (table.number === '1') { style.left = '15%'; }
               else if (table.number === '2') { style.left = '40%'; }
               else if (table.number === '3') { style.left = '65%'; }
             }
-            else if (table.number === '57') {
-              shapeClass += " rounded-sm w-[9%] h-[6%] min-w-[36px] min-h-[24px] max-w-[62px] max-h-[42px] -rotate-[15deg]";
-              style.right = '8%';
-              style.top = '34%';
+            else if (['51', '52', '53', '54', '55', '56', '57'].includes(table.number)) {
+              shapeClass += " rounded-sm w-[8%] h-[6%] min-w-[35px] min-h-[25px] max-w-[60px] max-h-[40px] transform -rotate-[15deg]";
+              const idx = parseInt(table.number) - 51;
+              style.right = '5%';
+              style.top = `${15 + (idx * 11)}%`;
             }
 
             if (Object.keys(style).length > 0) {
@@ -267,18 +260,18 @@ export default function Sala() {
                   onClick={() => handleSelectTable(table.id)}
                   data-testid={`map-table-${table.number}`}
                 >
-                  <span className="text-lg sm:text-xl font-medium tracking-tighter">{table.number}</span>
+                  <span className="font-serif text-lg sm:text-xl font-medium tracking-tighter">{table.number}</span>
                   {(hasActiveService || isSeated) && !isPreparing && !isReady && (
-                    <span className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#121620] ${isSeated ? 'bg-slate-400' : 'bg-primary'}`} />
+                    <span className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#1a1b1e] ${isSeated ? 'bg-red-500' : 'bg-primary'}`} />
                   )}
                   {isPreparing && (
-                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full border-2 border-[#121620] animate-pulse" />
+                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full border-2 border-[#1a1b1e] animate-pulse" />
                   )}
                   {isReady && (
-                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[#121620] shadow-[0_0_8px_#10b981]" />
+                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[#1a1b1e] shadow-[0_0_8px_#10b981]" />
                   )}
                   {table.restrictions.type && (
-                    <span className="absolute -bottom-1 -left-1 w-3.5 h-3.5 bg-destructive rounded-full border-2 border-[#121620] flex items-center justify-center">
+                    <span className="absolute -bottom-1 -left-1 w-3.5 h-3.5 bg-destructive rounded-full border-2 border-[#1a1b1e] flex items-center justify-center">
                       <AlertTriangle className="w-2 h-2 text-white" />
                     </span>
                   )}
@@ -287,8 +280,8 @@ export default function Sala() {
             }
             return null;
           })}
-        </PremiumCard>
-      </AppContainer>
+        </div>
+      </div>
     );
   }
 
@@ -298,8 +291,8 @@ export default function Sala() {
   const currentMomentName = selectedTable.momentsHistory.find(h => h.momentNumber === selectedTable.currentMoment)?.momentName;
 
   return (
-    <AppContainer className="space-y-7 max-w-3xl animate-in fade-in duration-300 pb-6">
-      <div className="flex items-center justify-between border-b border-border/40 pb-5">
+    <div className="space-y-6 max-w-2xl mx-auto w-full animate-in fade-in duration-300">
+      <div className="flex items-center justify-between border-b border-border/40 pb-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary" onClick={() => setSelectedTableId(null)}>
             <ArrowLeft className="w-5 h-5" />
@@ -585,6 +578,6 @@ export default function Sala() {
           </Card>
         </div>
       )}
-    </AppContainer>
+    </div>
   );
 }

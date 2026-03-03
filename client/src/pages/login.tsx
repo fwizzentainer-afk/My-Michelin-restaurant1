@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChefHat, UtensilsCrossed, Shield, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { AppContainer } from "@/components/design-system";
 
 export default function Login() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
@@ -54,72 +53,72 @@ export default function Login() {
   };
 
   return (
-    <AppContainer className="flex-1 flex items-center justify-center animate-in fade-in duration-700 py-6">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background z-0" />
+    <div className="flex-1 flex items-center justify-center -mt-10 animate-in fade-in duration-700">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/5 via-background to-background z-0" />
       
-      <Card className="w-full max-w-4xl border-border bg-[#0d131d]/88 backdrop-blur-xl relative z-10 shadow-[0_30px_80px_rgba(0,0,0,0.55)] overflow-hidden rounded-2xl">
-        <CardHeader className="space-y-4 text-center pb-8 pt-12">
-          <div className="mx-auto w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border border-primary/30 mb-2">
+      <Card className="w-full max-w-md border-border/40 bg-card/60 backdrop-blur-xl relative z-10 shadow-2xl shadow-black/50 overflow-hidden">
+        <CardHeader className="space-y-4 text-center pb-6 pt-10">
+          <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 mb-2">
             <UtensilsCrossed className="w-8 h-8 text-primary" />
           </div>
           <div>
-            <CardTitle className="text-4xl sm:text-5xl mb-2 text-foreground">Acesso ao Sistema</CardTitle>
-            <CardDescription className="text-muted-foreground tracking-[0.18em] uppercase text-sm">
+            <CardTitle className="font-inter text-3xl mb-2 text-foreground">Acesso ao Sistema</CardTitle>
+            <CardDescription className="text-muted-foreground tracking-wide uppercase text-xs">
               My Michelin Restaurant
             </CardDescription>
           </div>
         </CardHeader>
         
         {!selectedRole ? (
-          <CardContent className="space-y-5 px-6 sm:px-12 pb-12 animate-in slide-in-from-left-4 duration-300">
+          <CardContent className="space-y-4 px-6 pb-10 animate-in slide-in-from-left-4 duration-300">
             <Button 
               variant="outline" 
-              className="w-full h-24 text-lg justify-start px-6 border-border bg-[#0b1119] hover:border-primary/50 hover:bg-primary/5"
+              className="w-full h-20 text-lg justify-start px-6 border-border/40 hover:border-primary/50 hover:bg-primary/5"
               onClick={() => handleRoleSelect("sala")}
               data-testid="btn-role-sala"
             >
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mr-4 border border-primary/20">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-4">
                 <UtensilsCrossed className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left flex-1">
-                <span className="text-2xl sm:text-3xl block">Sala</span>
-                <span className="text-sm text-muted-foreground uppercase tracking-[0.14em]">Máx. 5 Dispositivos</span>
+                <span className="font-inter text-xl block">Sala</span>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Máx. 5 Dispositivos</span>
               </div>
             </Button>
 
             <Button 
               variant="outline" 
-              className="w-full h-24 text-lg justify-start px-6 border-border bg-[#0b1119] hover:border-primary/50 hover:bg-primary/5"
+              className="w-full h-20 text-lg justify-start px-6 border-border/40 hover:border-primary/50 hover:bg-primary/5"
               onClick={() => handleRoleSelect("cozinha")}
               data-testid="btn-role-cozinha"
             >
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mr-4 border border-primary/20">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-4">
                 <ChefHat className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left flex-1">
-                <span className="text-2xl sm:text-3xl block">Cozinha</span>
-                <span className="text-sm text-muted-foreground uppercase tracking-[0.14em]">Máx. 2 Dispositivos</span>
+                <span className="font-inter text-xl block">Cozinha</span>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Máx. 2 Dispositivos</span>
               </div>
             </Button>
 
             <Button 
               variant="outline" 
-              className="w-full h-24 text-lg justify-start px-6 border-border bg-[#0b1119] hover:border-primary/50 hover:bg-primary/5"
+              className="w-full h-20 text-lg justify-start px-6 border-border/40 hover:border-primary/50 hover:bg-primary/5"
               onClick={() => handleRoleSelect("admin")}
               data-testid="btn-role-admin"
             >
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mr-4 border border-primary/20">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-4">
                 <Shield className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left flex-1">
-                <span className="text-2xl sm:text-3xl block">Admin</span>
-                <span className="text-sm text-muted-foreground uppercase tracking-[0.14em]">Gestão do Sistema</span>
+                <span className="font-inter text-xl block">Admin</span>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Gestão do Sistema</span>
               </div>
             </Button>
           </CardContent>
         ) : (
           <form onSubmit={handleLogin} className="animate-in slide-in-from-right-4 duration-300">
-            <CardContent className="space-y-6 px-6 sm:px-12 pb-6">
+            <CardContent className="space-y-6 px-6 pb-6">
               <div className="flex items-center text-primary mb-4 cursor-pointer hover:underline" onClick={() => setSelectedRole(null)}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 <span className="text-sm">Voltar às opções</span>
@@ -155,7 +154,7 @@ export default function Login() {
                 />
               </div>
             </CardContent>
-            <CardFooter className="px-6 sm:px-12 pb-12">
+            <CardFooter className="px-6 pb-10">
               <Button type="submit" className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/90 font-medium tracking-wide text-lg" data-testid="button-login-admin">
                 Entrar
               </Button>
@@ -163,6 +162,6 @@ export default function Login() {
           </form>
         )}
       </Card>
-    </AppContainer>
+    </div>
   );
 }
