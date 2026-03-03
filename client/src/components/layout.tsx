@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Info, LogOut } from "lucide-react";
@@ -20,11 +20,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background/80 text-foreground selection:bg-primary/30">
-      <header className="sticky top-0 z-20 border-b border-border bg-[#090c14]/85 backdrop-blur-xl">
+    <div className="min-h-screen flex flex-col bg-[#0b0f14] text-foreground selection:bg-primary/30">
+      <header className="sticky top-0 z-20 border-b border-border/70 bg-[#0a0f17]/88 backdrop-blur-xl">
         <div className="container flex h-16 max-w-screen-2xl items-center justify-between px-3 sm:px-4">
           <div className="flex items-center gap-2">
-            <span className="text-4xl font-bold tracking-tight text-primary sm:text-[2.2rem]">
+            <span className="text-[1.95rem] font-bold tracking-tight text-primary sm:text-[2.2rem]">
               My Michelin Restaurant
             </span>
           </div>

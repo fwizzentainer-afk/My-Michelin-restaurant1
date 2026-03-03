@@ -14,6 +14,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { AppContainer, PremiumCard, StatusBadge } from "@/components/design-system";
 
 export default function Sala() {
   const { tables, menus, pairings, updateTable, finishService, triggerNotification, settings, updateSettings } = useStore();
@@ -158,7 +159,7 @@ export default function Sala() {
 
   if (!selectedTableId) {
     return (
-      <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto w-full">
+      <AppContainer className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex flex-col gap-5 border-b border-border pb-5 mb-6 px-3 sm:px-0">
           <div className="flex items-center justify-between">
             <h2 className="text-5xl sm:text-6xl font-bold leading-[0.95] text-primary">Mapa do Salão</h2>
@@ -191,16 +192,16 @@ export default function Sala() {
             </Dialog>
           </div>
 
-          <div className="flex flex-wrap gap-3 text-[11px] sm:text-sm text-muted-foreground uppercase tracking-[0.18em]">
-            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-card border border-border" /> Livre</div>
-            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-primary/10 border border-primary/70" /> Em Serviço</div>
-            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-amber-500/15 border border-amber-500" /> Prepara</div>
-            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-emerald-500/20 border border-emerald-500" /> Pronto</div>
-            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-red-600/20 border border-red-500" /> Sentada</div>
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <StatusBadge tone="idle">Livre</StatusBadge>
+            <StatusBadge tone="active">Em Serviço</StatusBadge>
+            <StatusBadge tone="preparing">Prepara</StatusBadge>
+            <StatusBadge tone="ready">Pronto</StatusBadge>
+            <StatusBadge tone="idle">Sentada</StatusBadge>
           </div>
         </div>
         
-        <div className="relative w-full aspect-[3/4] sm:aspect-square md:aspect-video lg:aspect-[16/10] max-h-[75vh] bg-[#121620] rounded-2xl border border-[#242a3b] overflow-hidden shadow-[0_20px_45px_rgba(0,0,0,0.45)]">
+        <PremiumCard className="relative w-full aspect-[3/4] sm:aspect-square md:aspect-video lg:aspect-[16/10] max-h-[75vh] bg-[#11151f] overflow-hidden">
           <div className="absolute inset-0 opacity-35" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
           
           <div className="absolute top-0 left-0 w-[26%] h-14 bg-[#1a1f2d]/90 border-b border-r border-border rounded-br-3xl flex items-center justify-center text-xs uppercase tracking-[0.2em] text-muted-foreground shadow-inner backdrop-blur-sm z-10">
@@ -223,30 +224,30 @@ export default function Sala() {
             } else if (hasActiveService) {
               colorClass = "border-primary/60 bg-primary/15 text-primary shadow-[0_0_15px_rgba(212,175,55,0.2)]";
             } else if (isSeated) {
-              colorClass = "border-red-500 bg-red-600/20 text-red-500 shadow-[0_0_15px_rgba(220,38,38,0.2)]";
+              colorClass = "border-[#3f465c] bg-[#1f2433] text-slate-100 shadow-[0_0_15px_rgba(20,24,35,0.35)]";
             }
 
             const style: React.CSSProperties = {};
 
             if (['10', '11', '20', '21', '40', '41', '50', '51', '52', '53', '54', '55', '56'].includes(table.number)) {
               shapeClass += " rounded-full w-[11%] h-[11%] min-w-[48px] min-h-[48px] max-w-[86px] max-h-[86px]";
-              if (table.number === '50') { style.top = '10%'; style.left = '6%'; }
-              else if (table.number === '51') { style.top = '10%'; style.left = '18%'; }
-              else if (table.number === '52') { style.top = '10%'; style.left = '30%'; }
-              else if (table.number === '53') { style.top = '10%'; style.left = '42%'; }
-              else if (table.number === '54') { style.top = '10%'; style.left = '54%'; }
-              else if (table.number === '55') { style.top = '10%'; style.left = '66%'; }
-              else if (table.number === '56') { style.top = '10%'; style.left = '78%'; }
-              else if (table.number === '10') { style.top = '30%'; style.left = '20%'; }
-              else if (table.number === '11') { style.top = '44%'; style.left = '20%'; }
-              else if (table.number === '20') { style.top = '40%'; style.left = '48%'; }
-              else if (table.number === '21') { style.top = '34%'; style.left = '68%'; }
-              else if (table.number === '40') { style.top = '61%'; style.left = '30%'; }
-              else if (table.number === '41') { style.top = '64%'; style.left = '56%'; }
+              if (table.number === '50') { style.top = '9%'; style.left = '6%'; }
+              else if (table.number === '51') { style.top = '9%'; style.left = '18%'; }
+              else if (table.number === '52') { style.top = '9%'; style.left = '30%'; }
+              else if (table.number === '53') { style.top = '9%'; style.left = '42%'; }
+              else if (table.number === '54') { style.top = '9%'; style.left = '54%'; }
+              else if (table.number === '55') { style.top = '9%'; style.left = '66%'; }
+              else if (table.number === '56') { style.top = '9%'; style.left = '78%'; }
+              else if (table.number === '10') { style.top = '36%'; style.left = '8%'; }
+              else if (table.number === '20') { style.top = '32%'; style.left = '30%'; }
+              else if (table.number === '40') { style.top = '32%'; style.left = '56%'; }
+              else if (table.number === '11') { style.top = '52%'; style.left = '20%'; }
+              else if (table.number === '21') { style.top = '52%'; style.left = '45%'; }
+              else if (table.number === '41') { style.top = '52%'; style.left = '70%'; }
             }
             else if (['1', '2', '3'].includes(table.number)) {
               shapeClass += " rounded-xl w-[16%] h-[8%] min-w-[70px] min-h-[40px] max-w-[120px] max-h-[60px]";
-              style.bottom = '8%';
+              style.bottom = '10%';
               if (table.number === '1') { style.left = '15%'; }
               else if (table.number === '2') { style.left = '40%'; }
               else if (table.number === '3') { style.left = '65%'; }
@@ -254,7 +255,7 @@ export default function Sala() {
             else if (table.number === '57') {
               shapeClass += " rounded-sm w-[9%] h-[6%] min-w-[36px] min-h-[24px] max-w-[62px] max-h-[42px] -rotate-[15deg]";
               style.right = '8%';
-              style.top = '35%';
+              style.top = '34%';
             }
 
             if (Object.keys(style).length > 0) {
@@ -268,7 +269,7 @@ export default function Sala() {
                 >
                   <span className="text-lg sm:text-xl font-medium tracking-tighter">{table.number}</span>
                   {(hasActiveService || isSeated) && !isPreparing && !isReady && (
-                    <span className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#121620] ${isSeated ? 'bg-red-500' : 'bg-primary'}`} />
+                    <span className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#121620] ${isSeated ? 'bg-slate-400' : 'bg-primary'}`} />
                   )}
                   {isPreparing && (
                     <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full border-2 border-[#121620] animate-pulse" />
@@ -286,8 +287,8 @@ export default function Sala() {
             }
             return null;
           })}
-        </div>
-      </div>
+        </PremiumCard>
+      </AppContainer>
     );
   }
 
@@ -297,7 +298,7 @@ export default function Sala() {
   const currentMomentName = selectedTable.momentsHistory.find(h => h.momentNumber === selectedTable.currentMoment)?.momentName;
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto w-full animate-in fade-in duration-300">
+    <AppContainer className="space-y-6 max-w-3xl animate-in fade-in duration-300">
       <div className="flex items-center justify-between border-b border-border/40 pb-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary" onClick={() => setSelectedTableId(null)}>
@@ -584,6 +585,6 @@ export default function Sala() {
           </Card>
         </div>
       )}
-    </div>
+    </AppContainer>
   );
 }

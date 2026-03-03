@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChefHat, UtensilsCrossed, Shield, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AppContainer } from "@/components/design-system";
 
 export default function Login() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
@@ -53,10 +54,10 @@ export default function Login() {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center -mt-2 animate-in fade-in duration-700 px-3 sm:px-0">
+    <AppContainer className="flex-1 flex items-center justify-center animate-in fade-in duration-700 py-6">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background z-0" />
       
-      <Card className="w-full max-w-4xl border-border bg-[#070911]/90 backdrop-blur-xl relative z-10 shadow-[0_30px_80px_rgba(0,0,0,0.55)] overflow-hidden rounded-2xl">
+      <Card className="w-full max-w-4xl border-border bg-[#0d131d]/88 backdrop-blur-xl relative z-10 shadow-[0_30px_80px_rgba(0,0,0,0.55)] overflow-hidden rounded-2xl">
         <CardHeader className="space-y-4 text-center pb-6 pt-10">
           <div className="mx-auto w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border border-primary/30 mb-2">
             <UtensilsCrossed className="w-8 h-8 text-primary" />
@@ -73,7 +74,7 @@ export default function Login() {
           <CardContent className="space-y-4 px-6 sm:px-12 pb-10 animate-in slide-in-from-left-4 duration-300">
             <Button 
               variant="outline" 
-              className="w-full h-24 text-lg justify-start px-6 border-border bg-[#070911] hover:border-primary/50 hover:bg-primary/5"
+              className="w-full h-24 text-lg justify-start px-6 border-border bg-[#0b1119] hover:border-primary/50 hover:bg-primary/5"
               onClick={() => handleRoleSelect("sala")}
               data-testid="btn-role-sala"
             >
@@ -88,7 +89,7 @@ export default function Login() {
 
             <Button 
               variant="outline" 
-              className="w-full h-24 text-lg justify-start px-6 border-border bg-[#070911] hover:border-primary/50 hover:bg-primary/5"
+              className="w-full h-24 text-lg justify-start px-6 border-border bg-[#0b1119] hover:border-primary/50 hover:bg-primary/5"
               onClick={() => handleRoleSelect("cozinha")}
               data-testid="btn-role-cozinha"
             >
@@ -103,7 +104,7 @@ export default function Login() {
 
             <Button 
               variant="outline" 
-              className="w-full h-24 text-lg justify-start px-6 border-border bg-[#070911] hover:border-primary/50 hover:bg-primary/5"
+              className="w-full h-24 text-lg justify-start px-6 border-border bg-[#0b1119] hover:border-primary/50 hover:bg-primary/5"
               onClick={() => handleRoleSelect("admin")}
               data-testid="btn-role-admin"
             >
@@ -162,6 +163,6 @@ export default function Login() {
           </form>
         )}
       </Card>
-    </div>
+    </AppContainer>
   );
 }

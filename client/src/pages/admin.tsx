@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { AppContainer } from "@/components/design-system";
 
 type AccessUser = {
   id: string;
@@ -423,29 +424,29 @@ export default function Admin() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto pb-10">
+    <AppContainer className="space-y-6 animate-in fade-in duration-500 pb-10">
       <div className="flex items-center justify-between border-b border-border/40 pb-4">
-        <h2 className="text-2xl font-serif text-primary flex items-center">
+        <h2 className="text-3xl font-bold text-primary flex items-center">
           <Settings2 className="w-5 h-5 mr-3" />
           Painel de Gestão & Analytics Avançado
         </h2>
       </div>
 
       <Tabs defaultValue="analytics" className="w-full">
-        <TabsList className="grid w-full max-w-xl grid-cols-4 bg-card border border-border/40 mb-6">
-          <TabsTrigger value="realtime" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
+        <TabsList className="grid h-14 w-full max-w-2xl grid-cols-4 rounded-2xl bg-card/70 border border-border/70 mb-6 p-1">
+          <TabsTrigger value="realtime" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
             <Clock className="w-4 h-4 mr-2" />
             Tempo Real
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
+          <TabsTrigger value="analytics" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
             <BarChart3 className="w-4 h-4 mr-2" />
             Histórico
           </TabsTrigger>
-          <TabsTrigger value="menus" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
+          <TabsTrigger value="menus" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
             <UtensilsIcon className="w-4 h-4 mr-2" />
             Menus
           </TabsTrigger>
-          <TabsTrigger value="access" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
+          <TabsTrigger value="access" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
             <Lock className="w-4 h-4 mr-2" />
             Acessos
           </TabsTrigger>
@@ -975,7 +976,7 @@ export default function Admin() {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+    </AppContainer>
   );
 }
 
@@ -994,7 +995,7 @@ function MetricCard({ title, value, trend, good, bad }: any) {
     <Card className="border-border/40 bg-card/60">
       <CardContent className="p-6">
         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">{title}</p>
-        <p className="text-3xl font-serif text-foreground mb-2">{value}</p>
+        <p className="text-3xl font-bold text-foreground mb-2">{value}</p>
         <p className={`text-xs font-medium ${good ? 'text-emerald-500' : bad ? 'text-destructive' : 'text-muted-foreground'}`}>
           {trend}
         </p>

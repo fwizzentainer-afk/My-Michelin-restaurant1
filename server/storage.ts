@@ -297,3 +297,42 @@ export async function ensureAdminUser(
   if (existing) return existing;
   return storage.createUser({ username, password, role });
 }
+
+type BootstrapUser = {
+  username: string;
+  password: string;
+  role: "admin" | "sala" | "cozinha";
+};
+
+export async function ensureBootstrapUsers(rawUsers?: string) {
+  if (!rawUsers) return;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawUsers);
+  } catch {
+    throw new Error("BOOTSTRAP_USERS_JSON inválido (JSON malformado)");
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("BOOTSTRAP_USERS_JSON deve ser um array");
+  }
+
+  for (const row of parsed) {
+    const candidate = row as Partial<BootstrapUser>;
+    if (!candidate.username || !candidate.password || !candidate.role) {
+      continue;
+    }
+    if (!["admin", "sala", "cozinha"].includes(candidate.role)) {
+      continue;
+    }
+    const existing = await storage.getUserByUsername(candidate.username);
+    if (!existing) {
+      await storage.createUser({
+        username: candidate.username,
+        password: candidate.password,
+        role: candidate.role,
+      });
+    }
+  }
+}

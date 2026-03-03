@@ -8,7 +8,7 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import memorystore from "memorystore";
 import cors from "cors";
-import { ensureAdminUser, pool } from "./storage";
+import { ensureAdminUser, ensureBootstrapUsers, pool } from "./storage";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +32,10 @@ if (isDev && corsOrigins.length === 0) {
 
 if (!isDev && corsOrigins.length === 0) {
   throw new Error("CORS_ORIGINS é obrigatório em produção");
+}
+
+if (!isDev && !process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL é obrigatório em produção para persistir contas e dados");
 }
 
 const isAllowedOrigin = (origin?: string) => {
@@ -211,6 +215,10 @@ async function startServer() {
       );
     } else {
       console.warn("ADMIN_PASSWORD não definido - defina para criar o usuário admin");
+    }
+
+    if (process.env.BOOTSTRAP_USERS_JSON) {
+      await ensureBootstrapUsers(process.env.BOOTSTRAP_USERS_JSON);
     }
 
     await setupRoutes();

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock, AlertCircle, AlertTriangle, Utensils, Expand } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AppContainer, PremiumCard, StatusBadge } from "@/components/design-system";
 
 export default function Cozinha() {
   const { tables, menus, updateTable, triggerNotification } = useStore();
@@ -32,27 +33,27 @@ export default function Cozinha() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-5xl mx-auto w-full">
+    <AppContainer className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
         <div>
-          <h2 className="text-3xl font-serif text-primary">Painel da Cozinha</h2>
-          <p className="text-muted-foreground text-sm uppercase tracking-widest mt-1">Gestão de Comandas em Tempo Real</p>
+          <h2 className="text-4xl font-bold text-primary">Painel da Cozinha</h2>
+          <p className="text-muted-foreground text-sm uppercase tracking-[0.18em] mt-1">Gestão de Comandas em Tempo Real</p>
         </div>
         <div className="flex gap-4">
-          <Card className="px-4 py-2 bg-amber-500/10 border-amber-500/20 flex items-center gap-3">
+          <PremiumCard className="px-4 py-2 bg-amber-500/10 border-amber-500/20 flex items-center gap-3">
             <Clock className="w-5 h-5 text-amber-500" />
             <div className="flex flex-col">
               <span className="text-[10px] uppercase text-amber-500/70 font-bold leading-none">Em Preparo</span>
               <span className="text-xl font-medium leading-none mt-1">{preparingTables.length}</span>
             </div>
-          </Card>
-          <Card className="px-4 py-2 bg-emerald-500/10 border-emerald-500/20 flex items-center gap-3">
+          </PremiumCard>
+          <PremiumCard className="px-4 py-2 bg-emerald-500/10 border-emerald-500/20 flex items-center gap-3">
             <CheckCircle2 className="w-5 h-5 text-emerald-500" />
             <div className="flex flex-col">
               <span className="text-[10px] uppercase text-emerald-500/70 font-bold leading-none">Pronto</span>
               <span className="text-xl font-medium leading-none mt-1">{readyTables.length}</span>
             </div>
-          </Card>
+          </PremiumCard>
         </div>
       </div>
 
@@ -74,7 +75,7 @@ export default function Cozinha() {
           ))
         )}
       </div>
-    </div>
+    </AppContainer>
   );
 }
 
@@ -135,7 +136,7 @@ function CozinhaTableCard({
       table.status === 'paused' ? 'border-destructive/30 bg-destructive/5' :
       table.status === 'idle' && table.menu ? 'border-primary/30 bg-primary/5' :
       'border-amber-500/30 bg-amber-500/5'
-    }`}>
+    } ${table.currentMoment === 1 && table.status === "preparing" ? "animate-in zoom-in-95" : ""}`}>
       {table.restrictions.type && (
         <div className={`py-1 px-4 text-[10px] font-bold uppercase tracking-widest flex items-center justify-between border-b border-white/10 ${
           table.restrictions.type === 'alergia' ? 'bg-destructive text-white' : 
@@ -218,8 +219,8 @@ function CozinhaTableCard({
                       <p className="font-medium">
                         {step.completed ? "✔" : step.inProgress ? "◐" : "☐"} M{step.real}/{table.totalMoments} - {step.name}
                       </p>
-                      {step.inProgress && <Badge className="bg-amber-500/20 text-amber-600">Em preparo</Badge>}
-                      {step.completed && <Badge className="bg-emerald-500/20 text-emerald-600">Concluído</Badge>}
+                      {step.inProgress && <StatusBadge tone="preparing">Em preparo</StatusBadge>}
+                      {step.completed && <StatusBadge tone="ready">Concluído</StatusBadge>}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {step.history?.startTime
