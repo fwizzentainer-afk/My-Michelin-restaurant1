@@ -5,18 +5,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, Settings2, Plus, Trash2, Lock, Clock, ArrowUpRight, CheckCircle2, Calendar as CalendarIcon, Filter } from "lucide-react";
+import { BarChart3, Settings2, Plus, Trash2, Lock, Clock, ArrowUpRight, CheckCircle2, Calendar as CalendarIcon, Filter, UserPlus, ShieldCheck, Pencil, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Switch } from "@/components/ui/switch";
 
 export default function Admin() {
-  const { menus, tables, historicalLogs, createMenu, updateMenu, deleteMenu, connectionStatus } = useStore();
+  const { menus, tables, historicalLogs, createMenu, updateMenu, deleteMenu, connectionStatus, settings, updateSettings } = useStore();
   const { toast } = useToast();
   
   const [newMenuName, setNewMenuName] = useState("");
   const [newMoments, setNewMoments] = useState<string[]>([""]);
+  const [editingMenuId, setEditingMenuId] = useState<string | null>(null);
+  const [editingMoments, setEditingMoments] = useState<string[]>([]);
+  const [newUsername, setNewUsername] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newUserRole, setNewUserRole] = useState<"sala" | "cozinha" | "admin">("sala");
+  const [creatingUser, setCreatingUser] = useState(false);
   
   // Filters for Analytics
   const [dateRange, setDateRange] = useState<string>("today"); // 'today', 'week', 'all'
@@ -234,6 +241,94 @@ export default function Admin() {
     toast({ title: "Status Atualizado", description: `Menu ${!menu.isActive ? 'ativado' : 'desativado'}.` });
   };
 
+  const startEditingMenu = (menu: Menu) => {
+    setEditingMenuId(menu.id);
+    setEditingMoments(menu.moments.length ? [...menu.moments] : [""]);
+  };
+
+  const cancelEditingMenu = () => {
+    setEditingMenuId(null);
+    setEditingMoments([]);
+  };
+
+  const updateEditingMoment = (index: number, value: string) => {
+    setEditingMoments((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  };
+
+  const addEditingMoment = () => {
+    setEditingMoments((prev) => [...prev, ""]);
+  };
+
+  const removeEditingMoment = (index: number) => {
+    setEditingMoments((prev) => {
+      if (prev.length <= 1) return prev;
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const saveEditingMenu = (menu: Menu) => {
+    const cleaned = editingMoments.map((m) => m.trim()).filter(Boolean);
+    if (!cleaned.length) {
+      toast({
+        title: "Menu inválido",
+        description: "Informe pelo menos 1 momento.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateMenu(menu.id, { moments: cleaned });
+    toast({ title: "Menu atualizado", description: `${menu.name} foi atualizado com sucesso.` });
+    cancelEditingMenu();
+  };
+
+  const handleCreateUser = async () => {
+    if (!newUsername.trim() || !newPassword.trim()) {
+      toast({
+        title: "Dados incompletos",
+        description: "Informe usuário e senha para criar o acesso.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCreatingUser(true);
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: newUsername.trim(),
+          password: newPassword,
+          role: newUserRole,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Falha ao criar usuário");
+      }
+
+      setNewUsername("");
+      setNewPassword("");
+      setNewUserRole("sala");
+      toast({ title: "Usuário criado", description: "Novo acesso cadastrado com sucesso." });
+    } catch (err) {
+      toast({
+        title: "Erro ao criar usuário",
+        description: err instanceof Error ? err.message : "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+
   // Custom Recharts theme colors based on our CSS variables
   const colors = {
     primary: "hsl(0 0% 82%)",
@@ -278,7 +373,7 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="analytics" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3 bg-card border border-border/40 mb-6">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4 bg-card border border-border/40 mb-6">
           <TabsTrigger value="realtime" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
             <Clock className="w-4 h-4 mr-2" />
             Tempo Real
@@ -290,6 +385,10 @@ export default function Admin() {
           <TabsTrigger value="menus" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
             <UtensilsIcon className="w-4 h-4 mr-2" />
             Menus
+          </TabsTrigger>
+          <TabsTrigger value="access" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
+            <ShieldCheck className="w-4 h-4 mr-2" />
+            Acesso
           </TabsTrigger>
         </TabsList>
 
@@ -559,16 +658,80 @@ export default function Admin() {
                     <p className="text-sm text-muted-foreground mb-4">
                       {menu.moments.length} Momentos cadastrados
                     </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {menu.moments.map((m, i) => (
-                        <Badge key={i} variant="secondary" className="text-[10px] font-normal">{i+1}. {m}</Badge>
-                      ))}
-                    </div>
+                    {editingMenuId === menu.id ? (
+                      <div className="space-y-2 rounded-lg border border-border/50 bg-background/30 p-3">
+                        {editingMoments.map((moment, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <span className="w-6 shrink-0 text-center text-xs text-muted-foreground">{idx + 1}.</span>
+                            <Input
+                              value={moment}
+                              onChange={(e) => updateEditingMoment(idx, e.target.value)}
+                              className="h-8 bg-background/40"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => removeEditingMoment(idx)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button type="button" variant="outline" size="sm" className="w-full" onClick={addEditingMoment}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Adicionar Momento
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {menu.moments.map((m, i) => (
+                          <Badge key={i} variant="secondary" className="text-[10px] font-normal">{i+1}. {m}</Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="flex sm:flex-col justify-start gap-2 shrink-0 border-l border-border/20 pl-4 sm:border-l-0 sm:pl-0">
+                    {editingMenuId === menu.id ? (
+                      <>
+                        <Button
+                          type="button"
+                          variant="default"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => saveEditingMenu(menu)}
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Salvar
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={cancelEditingMenu}
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          Cancelar
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => startEditingMenu(menu)}
+                      >
+                        <Pencil className="w-4 h-4 mr-2" />
+                        Editar
+                      </Button>
+                    )}
                     <Button 
                       variant={menu.isActive ? "outline" : "default"} 
                       size="sm"
+                      disabled={editingMenuId === menu.id}
                       className={!menu.isActive ? "bg-primary text-primary-foreground hover:bg-primary/90" : "w-full"}
                       onClick={() => toggleMenuStatus(menu)}
                     >
@@ -577,9 +740,9 @@ export default function Admin() {
                     <Button 
                       variant="destructive" 
                       size="sm" 
+                      disabled={menu.isActive || editingMenuId === menu.id}
                       className="bg-destructive/20 text-destructive hover:bg-destructive hover:text-destructive-foreground border border-destructive/30 w-full"
                       onClick={() => handleDeleteMenu(menu)}
-                      disabled={menu.isActive}
                     >
                       {menu.isActive ? <Lock className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
                     </Button>
@@ -637,6 +800,81 @@ export default function Admin() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="access" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="border-border/60 bg-card/70">
+            <CardHeader>
+              <CardTitle className="font-light uppercase tracking-[2px] text-lg">Regras de Login</CardTitle>
+              <CardDescription>
+                Controle se Sala e Cozinha exigem usuário/senha no acesso inicial.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background/30 p-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Exigir login para Sala/Cozinha</p>
+                  <p className="text-xs text-muted-foreground">
+                    {settings.requireRoleLogin
+                      ? "Ativo: solicita usuário e senha."
+                      : "Desativado: acesso direto sem credenciais."}
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.requireRoleLogin}
+                  onCheckedChange={(checked) => updateSettings({ requireRoleLogin: checked })}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Ativar/desativar menus (9 e 11 momentos) continua no tab <strong>Menus</strong>.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60 bg-card/70">
+            <CardHeader>
+              <CardTitle className="font-light uppercase tracking-[2px] text-lg">Criar Usuário</CardTitle>
+              <CardDescription>
+                Cadastre novos acessos para Sala, Cozinha ou Admin.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Usuário</Label>
+                <Input
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  placeholder="ex: cozinha01"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Senha</Label>
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Digite a senha"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Perfil</Label>
+                <Select value={newUserRole} onValueChange={(value: "sala" | "cozinha" | "admin") => setNewUserRole(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o perfil" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sala">Sala</SelectItem>
+                    <SelectItem value="cozinha">Cozinha</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleCreateUser} disabled={creatingUser} className="w-full">
+                <UserPlus className="w-4 h-4 mr-2" />
+                {creatingUser ? "Criando..." : "Criar Usuário"}
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

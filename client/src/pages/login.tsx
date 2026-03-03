@@ -13,11 +13,16 @@ export default function Login() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useStore();
+  const { login, settings } = useStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const handleRoleSelect = (role: Exclude<Role, null>) => {
+    if ((role === "sala" || role === "cozinha") && !settings.requireRoleLogin) {
+      login(role);
+      setLocation(`/${role}`);
+      return;
+    }
     setSelectedRole(role);
     setUsername("");
     setPassword("");

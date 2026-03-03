@@ -67,6 +67,7 @@ interface StoreState {
   historicalLogs: HistoricalService[];
   settings: {
     soundEnabled: boolean;
+    requireRoleLogin: boolean;
   };
   connectionStatus: {
     online: boolean;
@@ -112,6 +113,11 @@ const defaultMenus: Menu[] = [
 ];
 
 const defaultPairings = ['Essencial', 'Gastronômico', 'À Carta', 'Sem Pearing'];
+const SETTINGS_STORAGE_KEY = "michelin_settings_v1";
+const defaultSettings: StoreState["settings"] = {
+  soundEnabled: true,
+  requireRoleLogin: true,
+};
 
 const StoreContext = createContext<StoreState | undefined>(undefined);
 const SYNC_CHANNEL = "michelin_sync";
@@ -121,7 +127,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [tables, setTables] = useState<Table[]>(defaultTables);
   const [menus, setMenus] = useState<Menu[]>(defaultMenus);
   const [historicalLogs, setHistoricalLogs] = useState<HistoricalService[]>([]);
-  const [settings, setSettings] = useState({ soundEnabled: true });
+  const [settings, setSettings] = useState<StoreState["settings"]>(() => {
+    try {
+      const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (!raw) return defaultSettings;
+      const parsed = JSON.parse(raw) as Partial<StoreState["settings"]>;
+      return { ...defaultSettings, ...parsed };
+    } catch {
+      return defaultSettings;
+    }
+  });
   const [online, setOnline] = useState<boolean>(
     typeof navigator === "undefined" ? true : navigator.onLine,
   );
@@ -161,7 +176,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       } else if (event.type === "SYNC_LOGS") {
         setHistoricalLogs(event.payload);
       } else if (event.type === "SYNC_SETTINGS") {
-        setSettings(event.payload);
+        setSettings((prev) => ({ ...prev, ...event.payload }));
       } else if (event.type === "NOTIFICATION") {
         const { targetRole, title, body } = event.payload;
         if (role === targetRole) {
@@ -261,6 +276,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       socket.off("disconnect", onDisconnect);
     };
   }, [online]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    } catch (err) {
+      console.warn("Falha ao persistir configurações locais:", err);
+    }
+  }, [settings]);
 
   const requestNotificationPermission = async () => {
     if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
