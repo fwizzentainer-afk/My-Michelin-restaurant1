@@ -29,11 +29,23 @@ export async function registerRoutes(
     next();
   };
 
-  const requireAdmin: express.RequestHandler = (req, res, next) => {
-    if (req.session.role !== "admin") {
-      return res.status(403).json({ error: "Acesso restrito" });
+  const requireAdmin: express.RequestHandler = async (req, res, next) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Não autenticado" });
     }
-    next();
+
+    if (req.session.role === "admin") {
+      return next();
+    }
+
+    // Fallback for old/stale sessions that may not have role persisted correctly.
+    const user = await storage.getUser(req.session.userId);
+    if (user?.role === "admin") {
+      req.session.role = "admin";
+      return next();
+    }
+
+    return res.status(403).json({ error: "Acesso restrito" });
   };
 
   // Health-check for uptime monitors and manual checks
