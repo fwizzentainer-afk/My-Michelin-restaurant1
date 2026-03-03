@@ -114,6 +114,9 @@ const defaultMenus: Menu[] = [
 
 const defaultPairings = ['Essencial', 'Gastronômico', 'À Carta', 'Sem Pearing'];
 const SETTINGS_STORAGE_KEY = "michelin_settings_v1";
+const MENUS_STORAGE_KEY = "michelin_menus_v1";
+const TABLES_STORAGE_KEY = "michelin_tables_v1";
+const LOGS_STORAGE_KEY = "michelin_logs_v1";
 const defaultSettings: StoreState["settings"] = {
   soundEnabled: true,
   requireRoleLogin: true,
@@ -123,10 +126,48 @@ const StoreContext = createContext<StoreState | undefined>(undefined);
 const SYNC_CHANNEL = "michelin_sync";
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
+  const loadTables = (): Table[] => {
+    try {
+      const raw = localStorage.getItem(TABLES_STORAGE_KEY);
+      if (!raw) return defaultTables;
+      const parsed = JSON.parse(raw) as Table[];
+      if (!Array.isArray(parsed)) return defaultTables;
+
+      const byId = new Map(parsed.map((table) => [table.id, table]));
+      return defaultTables.map((table) => {
+        const stored = byId.get(table.id);
+        return stored ? { ...table, ...stored } : table;
+      });
+    } catch {
+      return defaultTables;
+    }
+  };
+
+  const loadLogs = (): HistoricalService[] => {
+    try {
+      const raw = localStorage.getItem(LOGS_STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as HistoricalService[];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  };
+
   const [role, setRole] = useState<Role | null>(null);
-  const [tables, setTables] = useState<Table[]>(defaultTables);
-  const [menus, setMenus] = useState<Menu[]>(defaultMenus);
-  const [historicalLogs, setHistoricalLogs] = useState<HistoricalService[]>([]);
+  const [tables, setTables] = useState<Table[]>(loadTables);
+  const [menus, setMenus] = useState<Menu[]>(() => {
+    try {
+      const raw = localStorage.getItem(MENUS_STORAGE_KEY);
+      if (!raw) return defaultMenus;
+      const parsed = JSON.parse(raw) as Menu[];
+      if (!Array.isArray(parsed) || parsed.length === 0) return defaultMenus;
+      return parsed;
+    } catch {
+      return defaultMenus;
+    }
+  });
+  const [historicalLogs, setHistoricalLogs] = useState<HistoricalService[]>(loadLogs);
   const [settings, setSettings] = useState<StoreState["settings"]>(() => {
     try {
       const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
@@ -284,6 +325,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       console.warn("Falha ao persistir configurações locais:", err);
     }
   }, [settings]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(MENUS_STORAGE_KEY, JSON.stringify(menus));
+    } catch (err) {
+      console.warn("Falha ao persistir menus locais:", err);
+    }
+  }, [menus]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TABLES_STORAGE_KEY, JSON.stringify(tables));
+    } catch (err) {
+      console.warn("Falha ao persistir mesas locais:", err);
+    }
+  }, [tables]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify(historicalLogs));
+    } catch (err) {
+      console.warn("Falha ao persistir histórico local:", err);
+    }
+  }, [historicalLogs]);
 
   const requestNotificationPermission = async () => {
     if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
