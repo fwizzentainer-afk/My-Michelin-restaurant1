@@ -214,7 +214,7 @@ export default function Sala() {
                   <DialogTitle className="text-base font-light uppercase tracking-[2px] text-foreground">Configurações</DialogTitle>
                 </DialogHeader>
                 <div className="py-6 space-y-6">
-                  <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-3">
+                  <div className="rounded-lg border border-border/60 bg-background p-3 space-y-3 md:space-y-0 md:flex md:items-center md:justify-between md:gap-4">
                     <div className="flex items-center gap-3">
                       {settings.notificationsEnabled ? <Bell className="w-5 h-5 text-primary" /> : <BellOff className="w-5 h-5 text-muted-foreground" />}
                       <div className="space-y-0.5">
@@ -225,20 +225,20 @@ export default function Sala() {
                     <RadioGroup
                       value={settings.notificationsEnabled ? "true" : "false"}
                       onValueChange={(value) => updateSettings({ notificationsEnabled: value === "true" })}
-                      className="grid grid-cols-2 gap-3"
+                      className="grid grid-cols-2 gap-2 w-full md:w-auto md:min-w-[230px]"
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2">
                         <RadioGroupItem id="notif-on" value="true" />
                         <Label htmlFor="notif-on" className="text-xs uppercase tracking-wide">Ativado</Label>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2">
                         <RadioGroupItem id="notif-off" value="false" />
                         <Label htmlFor="notif-off" className="text-xs uppercase tracking-wide">Desativado</Label>
                       </div>
                     </RadioGroup>
                   </div>
 
-                  <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-3">
+                  <div className="rounded-lg border border-border/60 bg-background p-3 space-y-3 md:space-y-0 md:flex md:items-center md:justify-between md:gap-4">
                     <div className="flex items-center gap-3">
                       {settings.soundEnabled ? <Volume2 className="w-5 h-5 text-primary" /> : <VolumeX className="w-5 h-5 text-muted-foreground" />}
                       <div className="space-y-0.5">
@@ -249,13 +249,13 @@ export default function Sala() {
                     <RadioGroup
                       value={settings.soundEnabled ? "true" : "false"}
                       onValueChange={(value) => updateSettings({ soundEnabled: value === "true" })}
-                      className="grid grid-cols-2 gap-3"
+                      className="grid grid-cols-2 gap-2 w-full md:w-auto md:min-w-[230px]"
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2">
                         <RadioGroupItem id="sound-on" value="true" />
                         <Label htmlFor="sound-on" className="text-xs uppercase tracking-wide">Ativado</Label>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2">
                         <RadioGroupItem id="sound-off" value="false" />
                         <Label htmlFor="sound-off" className="text-xs uppercase tracking-wide">Desativado</Label>
                       </div>
