@@ -248,6 +248,7 @@ function MomentProgress({ current, total }: { current: number; total: number }) 
 
 function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onReady: () => void; menuMoments: string[] }) {
   const [elapsed, setElapsed] = useState(0);
+  const [ticketOpen, setTicketOpen] = useState(false);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -279,10 +280,24 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
   const isUrgent = table.status === "preparing" && elapsed > 900;
   const isFinished = table.status === "finished";
   const restrictionType = table.restrictions.type ? table.restrictions.type.charAt(0).toUpperCase() + table.restrictions.type.slice(1) : "";
+  const totalSteps = Math.max(table.totalMoments || 0, menuMoments.length || 0);
+
+  const formatMomentLabel = (moment: number, total: number) => {
+    if (moment === 1) return "M1&2";
+    if (moment === total - 1) return `M${total - 1}&${total}`;
+    return `M${moment + 1}`;
+  };
+
+  const formatLocalHour = (ts: number | null) => {
+    if (!ts) return "";
+    return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
 
   return (
-    <div
-      style={{
+    <>
+      <div
+        style={{
+          position: "relative",
         background: isFinished
           ? "linear-gradient(175deg, rgba(122,31,47,0.32) 0%, rgba(79,28,45,0.38) 100%)"
           : "linear-gradient(175deg, #1e1e1e 0%, #181818 100%)",
@@ -299,8 +314,31 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
         borderRadius: "20px",
         overflow: "hidden",
       }}
-      className="flex flex-col transition-all duration-500"
-    >
+        className="flex flex-col transition-all duration-500"
+      >
+      <button
+        type="button"
+        onClick={() => setTicketOpen(true)}
+        style={{
+          position: "absolute",
+          top: 12,
+          right: 12,
+          zIndex: 5,
+          width: 30,
+          height: 30,
+          borderRadius: 8,
+          border: "1px solid rgba(255,255,255,0.14)",
+          background: "rgba(18,18,18,0.75)",
+          color: "rgba(255,255,255,0.78)",
+          fontSize: 14,
+          lineHeight: 1,
+          cursor: "pointer",
+        }}
+        aria-label={`Abrir ticket da mesa ${table.number}`}
+        title="Abrir ticket detalhado"
+      >
+        ⛶
+      </button>
       {table.restrictions.type && (
         <div
           style={{
@@ -536,6 +574,143 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
           )}
         </button>
       </div>
-    </div>
+      </div>
+
+      {ticketOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 60,
+            background: "rgba(0,0,0,0.72)",
+            backdropFilter: "blur(2px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+          onClick={() => setTicketOpen(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 520,
+              maxHeight: "92vh",
+              overflowY: "auto",
+              background: "linear-gradient(180deg, #111215 0%, #0d0e10 100%)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 18,
+              boxShadow: "0 28px 64px rgba(0,0,0,0.65)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {(table.restrictions.type || table.restrictions.description) && (
+              <div
+                style={{
+                  background: table.restrictions.type === "alergia" ? "#8f0000" : "#3b2a00",
+                  color: "rgba(255,255,255,0.95)",
+                  borderTopLeftRadius: 18,
+                  borderTopRightRadius: 18,
+                  padding: "12px 18px",
+                  fontSize: 12,
+                  letterSpacing: "1.8px",
+                  textTransform: "uppercase",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <span>
+                  ⚠ {table.restrictions.type === "alergia" ? "Alergia" : "Restrição"} {table.restrictions.description ? `· ${table.restrictions.description}` : ""}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setTicketOpen(false)}
+                  style={{
+                    border: "1px solid rgba(255,255,255,0.28)",
+                    background: "transparent",
+                    color: "inherit",
+                    width: 26,
+                    height: 26,
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    fontSize: 14,
+                  }}
+                  aria-label="Fechar ticket"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
+            {!table.restrictions.type && !table.restrictions.description && (
+              <div style={{ display: "flex", justifyContent: "flex-end", padding: 12, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                <button
+                  type="button"
+                  onClick={() => setTicketOpen(false)}
+                  style={{
+                    border: "1px solid rgba(255,255,255,0.22)",
+                    background: "transparent",
+                    color: "rgba(255,255,255,0.8)",
+                    width: 26,
+                    height: 26,
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    fontSize: 14,
+                  }}
+                  aria-label="Fechar ticket"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
+            <div style={{ padding: "22px 20px 24px" }}>
+              <h3 style={{ margin: 0, fontSize: 42, fontWeight: 700, letterSpacing: "1px", color: "rgba(255,255,255,0.95)" }}>
+                Mesa {table.number} · {table.pax ?? "-"} Pax
+              </h3>
+              <p style={{ margin: "6px 0 20px", fontSize: 17, color: "rgba(255,255,255,0.72)" }}>
+                {table.menu} · Pairing {table.pairing || "Sem Pairing"}
+              </p>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {Array.from({ length: totalSteps }).map((_, idx) => {
+                  const momentNumber = idx + 1;
+                  const log = table.momentsHistory.find((h) => h.momentNumber === momentNumber);
+                  const done = Boolean(log?.readyTime);
+                  const isCurrent = table.currentMoment === momentNumber && table.status === "preparing";
+                  const momentName = menuMoments[idx] || log?.momentName || `Momento ${momentNumber}`;
+                  return (
+                    <div key={`${table.id}-ticket-step-${momentNumber}`} style={{ padding: "8px 0 10px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            color: done ? "rgba(185,255,217,0.95)" : "rgba(255,255,255,0.9)",
+                            fontSize: 15,
+                            textDecoration: done ? "line-through" : "none",
+                            opacity: done ? 0.8 : 1,
+                          }}
+                        >
+                          <span style={{ width: 18, textAlign: "center" }}>{done ? "✓" : "☐"}</span>
+                          <span>
+                            {formatMomentLabel(momentNumber, totalSteps)} - {momentName}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: 14, color: done ? "rgba(82,199,141,0.95)" : "rgba(255,255,255,0.45)", minWidth: 50, textAlign: "right" }}>
+                          {done ? formatLocalHour(log?.readyTime ?? null) : isCurrent ? "Em preparo" : "Aguardando"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
