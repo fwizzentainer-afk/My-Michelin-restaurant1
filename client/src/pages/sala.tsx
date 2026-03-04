@@ -12,21 +12,14 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function Sala() {
   const { tables, menus, pairings, updateTable, finishService, triggerNotification, settings, updateSettings } = useStore();
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
-  const [highlightPausedTables, setHighlightPausedTables] = useState<boolean>(() => {
-    try {
-      const raw = localStorage.getItem("michelin_sala_highlight_paused");
-      return raw ? raw === "true" : true;
-    } catch {
-      return true;
-    }
-  });
+  const highlightPausedTables = true;
   const [mapFilter, setMapFilter] = useState<"all" | "livre" | "sentada" | "servico" | "prepara" | "pausada" | "pronto" | "finalizado">(() => {
     try {
       const raw = localStorage.getItem("michelin_sala_map_filter");
@@ -42,12 +35,6 @@ export default function Sala() {
 
   const selectedTable = tables.find(t => t.id === selectedTableId);
   const activeMenus = menus.filter(m => m.isActive);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("michelin_sala_highlight_paused", String(highlightPausedTables));
-    } catch {}
-  }, [highlightPausedTables]);
 
   useEffect(() => {
     try {
@@ -67,6 +54,28 @@ export default function Sala() {
     if (moment === 1) return "1&2";
     if (moment === total - 1) return `${total-1}&${total}`;
     return moment + 1;
+  };
+
+  const getLanguageBadge = (language: string | null) => {
+    if (!language) return null;
+    const normalized = language.trim().toUpperCase();
+    const mapping: Record<string, string> = {
+      PORTUGUES: "PT",
+      "PORTUGUÊS": "PT",
+      PT: "PT",
+      ESPANHOL: "ES",
+      ESPANOL: "ES",
+      ES: "ES",
+      INGLES: "EN",
+      "INGLÊS": "EN",
+      ING: "EN",
+      EN: "EN",
+      ENGLISH: "EN",
+      FRANCES: "FR",
+      "FRANCÊS": "FR",
+      FR: "FR",
+    };
+    return mapping[normalized] ?? normalized.slice(0, 2);
   };
 
   const handleSelectTable = (id: string) => setSelectedTableId(id);
@@ -191,12 +200,12 @@ export default function Sala() {
   if (!selectedTableId) {
     return (
       <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto w-full">
-        <div className="flex items-center justify-between border-b border-border/40 pb-2 mb-6">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-light uppercase tracking-[3px] text-foreground">Mapa do Salão</h2>
+        <div className="border-b border-border/40 pb-2 mb-6 space-y-3">
+          <div className="relative flex items-center justify-center">
+            <h2 className="text-xl font-light uppercase tracking-[3px] text-foreground text-center">Mapa do Salão</h2>
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground h-8 w-8">
+                <Button variant="ghost" size="icon" className="absolute right-0 rounded-full text-muted-foreground hover:text-foreground h-8 w-8">
                   <Settings className="w-5 h-5" />
                 </Button>
               </DialogTrigger>
@@ -210,13 +219,23 @@ export default function Sala() {
                       {settings.notificationsEnabled ? <Bell className="w-5 h-5 text-primary" /> : <BellOff className="w-5 h-5 text-muted-foreground" />}
                       <div className="space-y-0.5">
                         <Label>Notificações</Label>
-                        <p className="text-xs text-muted-foreground">`false` desliga e `true` ativa notificações</p>
+                        <p className="text-xs text-muted-foreground">Escolha se notificações ficam ativadas ou desativadas.</p>
                       </div>
                     </div>
-                    <Switch 
-                      checked={settings.notificationsEnabled} 
-                      onCheckedChange={(val) => updateSettings({ notificationsEnabled: val })} 
-                    />
+                    <RadioGroup
+                      value={settings.notificationsEnabled ? "true" : "false"}
+                      onValueChange={(value) => updateSettings({ notificationsEnabled: value === "true" })}
+                      className="grid grid-cols-2 gap-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem id="notif-on" value="true" />
+                        <Label htmlFor="notif-on" className="text-xs uppercase tracking-wide">Ativado</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem id="notif-off" value="false" />
+                        <Label htmlFor="notif-off" className="text-xs uppercase tracking-wide">Desativado</Label>
+                      </div>
+                    </RadioGroup>
                   </div>
 
                   <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-3">
@@ -224,24 +243,23 @@ export default function Sala() {
                       {settings.soundEnabled ? <Volume2 className="w-5 h-5 text-primary" /> : <VolumeX className="w-5 h-5 text-muted-foreground" />}
                       <div className="space-y-0.5">
                         <Label>Alerta Sonoro</Label>
-                        <p className="text-xs text-muted-foreground">Toque de notificação ao receber alertas</p>
+                        <p className="text-xs text-muted-foreground">Escolha se o alerta sonoro fica ativado ou desativado.</p>
                       </div>
                     </div>
-                    <Switch 
-                      checked={settings.soundEnabled} 
-                      onCheckedChange={(val) => updateSettings({ soundEnabled: val })} 
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-3">
-                    <div className="space-y-0.5">
-                      <Label>Destaque Mesa Pausada</Label>
-                      <p className="text-xs text-muted-foreground">Realça mesa pausada em azul no mapa</p>
-                    </div>
-                    <Switch
-                      checked={highlightPausedTables}
-                      onCheckedChange={setHighlightPausedTables}
-                    />
+                    <RadioGroup
+                      value={settings.soundEnabled ? "true" : "false"}
+                      onValueChange={(value) => updateSettings({ soundEnabled: value === "true" })}
+                      className="grid grid-cols-2 gap-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem id="sound-on" value="true" />
+                        <Label htmlFor="sound-on" className="text-xs uppercase tracking-wide">Ativado</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem id="sound-off" value="false" />
+                        <Label htmlFor="sound-off" className="text-xs uppercase tracking-wide">Desativado</Label>
+                      </div>
+                    </RadioGroup>
                   </div>
 
                   <div className="space-y-2 rounded-lg border border-border/60 bg-background p-3">
@@ -273,7 +291,7 @@ export default function Sala() {
               </DialogContent>
             </Dialog>
           </div>
-          <div className="flex flex-wrap gap-2 sm:gap-3 text-[9px] sm:text-xs text-muted-foreground uppercase tracking-widest justify-end">
+          <div className="flex flex-wrap gap-2 sm:gap-3 text-[9px] sm:text-xs text-muted-foreground uppercase tracking-widest justify-center lg:justify-end">
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-card border border-border" /> Livre</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-600 border border-red-500" /> Sentada</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-violet-500/20 border border-violet-500" /> Finalizado</div>
@@ -297,6 +315,7 @@ export default function Sala() {
             const isReady = table.status === 'ready';
             const isPaused = table.status === 'paused';
             const isFinished = table.status === "finished";
+            const languageBadge = getLanguageBadge(table.language);
             const tableCategory: "livre" | "sentada" | "servico" | "prepara" | "pausada" | "pronto" | "finalizado" =
               !table.menu
                 ? "livre"
@@ -388,6 +407,11 @@ export default function Sala() {
                   )}
                   {isFinished && (
                     <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-violet-500 rounded-full border-2 border-[#1a1b1e] shadow-[0_0_8px_#8b5cf6]" />
+                  )}
+                  {languageBadge && (
+                    <span className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full border border-cyan-400/60 bg-[#0f1620] text-[9px] font-bold leading-none text-cyan-300 flex items-center justify-center shadow-[0_0_8px_rgba(34,211,238,0.25)]">
+                      {languageBadge}
+                    </span>
                   )}
                   {table.restrictions.type && (
                     <span className="absolute -bottom-1 -left-1 w-3.5 h-3.5 bg-destructive rounded-full border-2 border-[#1a1b1e] flex items-center justify-center">
