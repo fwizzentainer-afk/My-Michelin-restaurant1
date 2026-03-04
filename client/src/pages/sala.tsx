@@ -192,6 +192,7 @@ export default function Sala() {
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-600 border border-red-500" /> Sentada</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary/10 border border-primary/50" /> Em Serviço</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500/20 border border-amber-500" /> Prepara</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500/20 border border-blue-500" /> Mesa pausada</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500" /> Pronto</div>
           </div>
         </div>
@@ -208,6 +209,7 @@ export default function Sala() {
             const isSeated = table.menu && !table.pairing && table.momentsHistory.some(h => h.momentNumber === -1);
             const isPreparing = table.status === 'preparing';
             const isReady = table.status === 'ready';
+            const isPaused = table.status === 'paused';
 
             let shapeClass = "flex items-center justify-center cursor-pointer transition-all duration-300 shadow-xl border-2 hover:scale-105 active:scale-95 absolute z-20";
             let colorClass = "border-border/30 bg-[#25262b] text-foreground hover:border-primary/40";
@@ -216,6 +218,8 @@ export default function Sala() {
               colorClass = "border-amber-500 bg-amber-500/10 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]";
             } else if (isReady) {
               colorClass = "border-emerald-500 bg-emerald-500/20 text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]";
+            } else if (isPaused) {
+              colorClass = "border-blue-500 bg-blue-500/20 text-blue-300 shadow-[0_0_20px_rgba(59,130,246,0.35)]";
             } else if (hasActiveService) {
               colorClass = "border-primary/60 bg-primary/10 text-primary shadow-[0_0_15px_rgba(212,175,55,0.15)]";
             } else if (isSeated) {
@@ -258,8 +262,11 @@ export default function Sala() {
                   data-testid={`map-table-${table.number}`}
                 >
                   <span className="text-lg sm:text-xl font-light tracking-[2px]">{table.number}</span>
-                  {(hasActiveService || isSeated) && !isPreparing && !isReady && (
+                  {(hasActiveService || isSeated) && !isPreparing && !isReady && !isPaused && (
                     <span className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#1a1b1e] ${isSeated ? 'bg-red-500' : 'bg-primary'}`} />
+                  )}
+                  {isPaused && (
+                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-500 rounded-full border-2 border-[#1a1b1e] shadow-[0_0_8px_#3b82f6]" />
                   )}
                   {isPreparing && (
                     <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full border-2 border-[#1a1b1e] animate-pulse" />

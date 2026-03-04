@@ -17,8 +17,8 @@ export default function Cozinha() {
   const activeTables = tables.filter((t) => t.menu && (t.currentMoment > 0 || t.momentsHistory.some((h) => h.momentNumber === -1)));
   const preparingTables = activeTables.filter((t) => t.status === "preparing");
   const readyTables = activeTables.filter((t) => t.status === "ready");
-  const tablesToSeat = tables.filter(
-    (t) => t.menu && t.status === "idle" && t.currentMoment === 0 && t.momentsHistory.length === 0,
+  const seatedTables = tables.filter(
+    (t) => t.menu && !t.pairing && t.momentsHistory.some((h) => h.momentNumber === -1),
   ).length;
 
   const handleReady = (id: string) => {
@@ -143,9 +143,9 @@ export default function Cozinha() {
                     marginBottom: 2,
                   }}
                 >
-                  A Sentar
+                  Mesa sentada
                 </span>
-                <span style={{ fontSize: "26px", fontWeight: 200, color: "rgba(167,139,250,0.85)", lineHeight: 1 }}>{tablesToSeat}</span>
+                <span style={{ fontSize: "26px", fontWeight: 200, color: "rgba(167,139,250,0.85)", lineHeight: 1 }}>{seatedTables}</span>
               </div>
             </div>
 
