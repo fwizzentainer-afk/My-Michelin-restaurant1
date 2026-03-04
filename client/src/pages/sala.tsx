@@ -276,7 +276,7 @@ export default function Sala() {
           <div className="flex flex-wrap gap-2 sm:gap-3 text-[9px] sm:text-xs text-muted-foreground uppercase tracking-widest justify-end">
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-card border border-border" /> Livre</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-600 border border-red-500" /> Sentada</div>
-            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-violet-500/20 border border-violet-500" /> Pronta para cobrar</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-violet-500/20 border border-violet-500" /> Finalizado</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500/20 border border-amber-500" /> Prepara</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500/20 border border-blue-500" /> Mesa pausada</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500" /> Pronto</div>
@@ -614,7 +614,7 @@ export default function Sala() {
                   {selectedTable.status === 'ready' ? 'Pronto na Cozinha' : 
                    selectedTable.status === 'preparing' ? 'Preparando' : 
                    selectedTable.status === 'paused' ? 'Pausado' :
-                   selectedTable.status === 'finished' ? 'Pronta para cobrar' : 'Aguardando'}
+                   selectedTable.status === 'finished' ? 'Finalizado' : 'Aguardando'}
                 </Badge>
               </div>
             </CardHeader>
@@ -659,7 +659,7 @@ export default function Sala() {
                   {selectedTable.status === 'finished' && (
                     <div className="flex items-center text-violet-200 text-sm font-medium mt-2 bg-violet-500/20 px-4 py-1.5 rounded-full border border-violet-500/40">
                       <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Pronta para cobrar
+                      Finalizado
                     </div>
                   )}
                   {selectedTable.currentMoment === 0 && (

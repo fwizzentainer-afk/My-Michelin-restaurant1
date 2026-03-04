@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, Settings2, Plus, Trash2, Lock, Clock, ArrowUpRight, CheckCircle2, Calendar as CalendarIcon, Filter, UserPlus, ShieldCheck, Pencil, Save, X } from "lucide-react";
+import { BarChart3, Settings2, Plus, Trash2, Lock, Clock, ArrowUpRight, CheckCircle2, Calendar as CalendarIcon, Filter, UserPlus, ShieldCheck, Pencil, Save, X, Bell, BellOff, Volume2, VolumeX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -811,7 +811,7 @@ export default function Admin() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background/30 p-4">
+              <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-4">
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Exigir login para Sala/Cozinha</p>
                   <p className="text-xs text-muted-foreground">
@@ -823,6 +823,36 @@ export default function Admin() {
                 <Switch
                   checked={settings.requireRoleLogin}
                   onCheckedChange={(checked) => updateSettings({ requireRoleLogin: checked })}
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    {settings.notificationsEnabled ? <Bell className="w-4 h-4 text-primary" /> : <BellOff className="w-4 h-4 text-muted-foreground" />}
+                    Notificações
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    `false` = desligada, `true` = ativada. Quando ativa, exibe notificações do sistema.
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.notificationsEnabled}
+                  onCheckedChange={(checked) => updateSettings({ notificationsEnabled: checked })}
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    {settings.soundEnabled ? <Volume2 className="w-4 h-4 text-primary" /> : <VolumeX className="w-4 h-4 text-muted-foreground" />}
+                    Alerta Sonoro
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    `false` = desligado, `true` = ativado. Quando ativo, toca som junto com alerta.
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.soundEnabled}
+                  onCheckedChange={(checked) => updateSettings({ soundEnabled: checked })}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
@@ -859,7 +889,7 @@ export default function Admin() {
               <div className="space-y-2">
                 <Label>Perfil</Label>
                 <Select value={newUserRole} onValueChange={(value: "sala" | "cozinha" | "admin") => setNewUserRole(value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background border-border/80">
                     <SelectValue placeholder="Selecione o perfil" />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border text-foreground">
