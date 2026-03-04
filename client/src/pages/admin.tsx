@@ -347,7 +347,7 @@ export default function Admin() {
           <Settings2 className="w-5 h-5 mr-3" />
           Painel de Gestão & Analytics Avançado
         </h2>
-        <div className="flex items-center gap-2 rounded-md border border-border/60 bg-card/70 px-3 py-2">
+        <div className="flex items-center gap-2 rounded-md border border-border/70 bg-card px-3 py-2">
           <span
             className={`h-2.5 w-2.5 rounded-full ${
               connectionStatus.mode === "online"
@@ -397,7 +397,7 @@ export default function Admin() {
             <MetricCard title="Mesas em Serviço" value={activeTables.length.toString()} trend="No momento" good={activeTables.length > 0} />
             <MetricCard title="Serviços Finalizados" value={historicalLogs.length.toString()} trend="Hoje" />
             <MetricCard title="Atrasos Detectados" value={delayedTables.length.toString()} trend="> 8 min na cozinha" bad={delayedTables.length > 0} />
-            <Card className="border-border/60 bg-card/70 overflow-hidden relative">
+            <Card className="border-border/70 bg-card overflow-hidden relative">
               <div className="absolute inset-0 bg-primary/5"></div>
               <CardContent className="p-6 relative z-10">
                 <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Mesa Mais Rápida</p>
@@ -414,7 +414,7 @@ export default function Admin() {
             </h3>
             
             {activeTables.length === 0 ? (
-              <Card className="border-dashed border-border/40 bg-card/30">
+              <Card className="border-dashed border-border/60 bg-card">
                 <CardContent className="p-8 text-center text-muted-foreground">
                   Nenhuma mesa em atendimento no momento.
                 </CardContent>
@@ -426,10 +426,10 @@ export default function Admin() {
                   const isDelayed = currentLog && !currentLog.readyTime && (Date.now() - currentLog.startTime!) > IDEAL_PREP_TIME;
                   
                   return (
-                    <Card key={table.id} className={`border-border/40 bg-card/60 transition-colors ${isDelayed ? 'border-destructive/50 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : ''}`}>
+                    <Card key={table.id} className={`border-border/60 bg-card transition-colors ${isDelayed ? 'border-destructive/50 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : ''}`}>
                       <CardContent className="p-0">
                         <div className="flex flex-col border-b border-border/20">
-                          <div className="p-4 bg-background/50 border-b border-border/20 flex justify-between items-center">
+                          <div className="p-4 bg-background border-b border-border/30 flex justify-between items-center">
                             <div>
                               <span className="text-xs uppercase text-muted-foreground tracking-widest">Mesa {table.number}</span>
                               <span className="text-lg font-light uppercase tracking-[2px] text-foreground block">{table.menu}</span>
@@ -476,7 +476,7 @@ export default function Admin() {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card/40 p-4 rounded-lg border border-border/40">
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-4 rounded-lg border border-border/60">
             <div className="flex items-center gap-4 w-full sm:w-auto">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-muted-foreground" />
@@ -518,7 +518,7 @@ export default function Admin() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="border-border/60 bg-card/70 col-span-1 lg:col-span-2">
+            <Card className="border-border/70 bg-card col-span-1 lg:col-span-2">
               <CardHeader>
                 <CardTitle className="font-light uppercase tracking-[2px] text-lg">
                   {compareMode ? "Comparativo de Tempo Total por Momento (Minutos)" : "Tempo Médio por Momento (Cozinha vs Sala em Minutos)"}
@@ -580,7 +580,7 @@ export default function Admin() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/60 bg-card/70">
+            <Card className="border-border/70 bg-card">
               <CardHeader>
                 <CardTitle className="font-light uppercase tracking-[2px] text-lg">Distribuição de Duração Média (Menus)</CardTitle>
               </CardHeader>
@@ -615,7 +615,7 @@ export default function Admin() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/60 bg-card/70">
+            <Card className="border-border/70 bg-card">
               <CardHeader>
                 <CardTitle className="font-light uppercase tracking-[2px] text-lg">Histórico Recente de Mesas</CardTitle>
               </CardHeader>
@@ -625,7 +625,7 @@ export default function Admin() {
                     <p className="text-sm text-muted-foreground text-center py-4">Nenhum serviço finalizado ainda.</p>
                   ) : (
                     historicalLogs.slice(-5).reverse().map(log => (
-                      <div key={log.id} className="flex justify-between items-center p-3 rounded-lg bg-background/50 border border-border/20">
+                      <div key={log.id} className="flex justify-between items-center p-3 rounded-lg bg-background border border-border/30">
                         <div>
                           <p className="font-medium text-sm">Mesa {log.tableNumber}</p>
                           <p className="text-[10px] text-muted-foreground uppercase">{log.menuName}</p>
@@ -648,7 +648,7 @@ export default function Admin() {
           <div className="lg:col-span-2 space-y-4">
             <h3 className="text-lg font-light uppercase tracking-[2px] text-foreground">Menus Cadastrados</h3>
             {menus.map((menu) => (
-              <Card key={menu.id} className={`border-border/40 transition-colors ${menu.isActive ? 'border-primary/50 bg-primary/5' : 'bg-card/40'}`}>
+              <Card key={menu.id} className={`border-border/60 transition-colors ${menu.isActive ? 'border-primary/50 bg-primary/10' : 'bg-card'}`}>
                 <CardContent className="p-6 flex flex-col sm:flex-row justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-3 mb-2">
@@ -659,14 +659,14 @@ export default function Admin() {
                       {menu.moments.length} Momentos cadastrados
                     </p>
                     {editingMenuId === menu.id ? (
-                      <div className="space-y-2 rounded-lg border border-border/50 bg-background/30 p-3">
+                      <div className="space-y-2 rounded-lg border border-border/60 bg-background p-3">
                         {editingMoments.map((moment, idx) => (
                           <div key={idx} className="flex items-center gap-2">
                             <span className="w-6 shrink-0 text-center text-xs text-muted-foreground">{idx + 1}.</span>
                             <Input
                               value={moment}
                               onChange={(e) => updateEditingMoment(idx, e.target.value)}
-                              className="h-8 bg-background/40"
+                              className="h-8 bg-background"
                             />
                             <Button
                               type="button"
@@ -754,7 +754,7 @@ export default function Admin() {
 
           <div className="space-y-4">
             <h3 className="text-lg font-light uppercase tracking-[2px] text-foreground">Criar Novo Menu</h3>
-            <Card className="border-border/40 bg-card/60">
+            <Card className="border-border/60 bg-card">
               <CardContent className="p-6 space-y-4">
                 <div className="space-y-2">
                   <Label className="text-xs uppercase tracking-widest text-muted-foreground">Nome do Menu</Label>
@@ -762,7 +762,7 @@ export default function Admin() {
                     value={newMenuName}
                     onChange={(e) => setNewMenuName(e.target.value)}
                     placeholder="Ex: Menu Primavera"
-                    className="bg-background/50 border-border/50"
+                    className="bg-background border-border/60"
                   />
                 </div>
                 
@@ -775,7 +775,7 @@ export default function Admin() {
                         value={moment}
                         onChange={(e) => handleUpdateMoment(idx, e.target.value)}
                         placeholder="Ex: Snacks"
-                        className="bg-background/50 border-border/50 h-9"
+                        className="bg-background border-border/60 h-9"
                       />
                       <Button 
                         variant="ghost" 
@@ -803,7 +803,7 @@ export default function Admin() {
         </TabsContent>
 
         <TabsContent value="access" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="border-border/60 bg-card/70">
+          <Card className="border-border/70 bg-card">
             <CardHeader>
               <CardTitle className="font-light uppercase tracking-[2px] text-lg">Regras de Login</CardTitle>
               <CardDescription>
@@ -811,19 +811,33 @@ export default function Admin() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-4">
+              <div className="rounded-lg border border-border/60 bg-background p-4 space-y-3">
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Exigir login para Sala/Cozinha</p>
                   <p className="text-xs text-muted-foreground">
                     {settings.requireRoleLogin
-                      ? "Ativo: solicita usuário e senha."
+                      ? "Ativado: solicita usuário e senha."
                       : "Desativado: acesso direto sem credenciais."}
                   </p>
                 </div>
-                <Switch
-                  checked={settings.requireRoleLogin}
-                  onCheckedChange={(checked) => updateSettings({ requireRoleLogin: checked })}
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={!settings.requireRoleLogin ? "default" : "outline"}
+                    className={!settings.requireRoleLogin ? "bg-primary text-primary-foreground" : ""}
+                    onClick={() => updateSettings({ requireRoleLogin: false })}
+                  >
+                    Desativado
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={settings.requireRoleLogin ? "default" : "outline"}
+                    className={settings.requireRoleLogin ? "bg-primary text-primary-foreground" : ""}
+                    onClick={() => updateSettings({ requireRoleLogin: true })}
+                  >
+                    Ativado
+                  </Button>
+                </div>
               </div>
               <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-4">
                 <div className="space-y-1">
@@ -861,7 +875,7 @@ export default function Admin() {
             </CardContent>
           </Card>
 
-          <Card className="border-border/60 bg-card/70">
+          <Card className="border-border/70 bg-card">
             <CardHeader>
               <CardTitle className="font-light uppercase tracking-[2px] text-lg">Criar Usuário</CardTitle>
               <CardDescription>
@@ -923,7 +937,7 @@ function UtensilsIcon(props: any) {
 
 function MetricCard({ title, value, trend, good, bad }: any) {
   return (
-    <Card className="border-border/60 bg-card/70">
+    <Card className="border-border/70 bg-card">
       <CardContent className="p-6">
         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">{title}</p>
         <p className="text-3xl font-light uppercase tracking-[3px] text-foreground mb-2">{value}</p>
@@ -944,7 +958,7 @@ function TimeMetric({ label, ms, active }: { label: string, ms: number, active?:
   };
 
   return (
-    <div className={`p-2 rounded bg-background/50 border border-border/20 flex flex-col items-center justify-center ${active ? 'ring-1 ring-primary/50' : ''}`}>
+    <div className={`p-2 rounded bg-background border border-border/30 flex flex-col items-center justify-center ${active ? 'ring-1 ring-primary/50' : ''}`}>
       <span className="text-[10px] uppercase text-muted-foreground mb-1 text-center leading-tight">{label}</span>
       <span className={`font-mono text-sm ${active ? 'text-primary' : 'text-foreground'}`}>{format(ms)}</span>
     </div>

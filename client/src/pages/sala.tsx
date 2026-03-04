@@ -200,12 +200,12 @@ export default function Sala() {
                   <Settings className="w-5 h-5" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-card border-border">
+              <DialogContent className="bg-[#141518] border-border/80 text-foreground shadow-2xl">
                 <DialogHeader>
                   <DialogTitle className="text-base font-light uppercase tracking-[2px] text-foreground">Configurações</DialogTitle>
                 </DialogHeader>
                 <div className="py-6 space-y-6">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-3">
                     <div className="flex items-center gap-3">
                       {settings.notificationsEnabled ? <Bell className="w-5 h-5 text-primary" /> : <BellOff className="w-5 h-5 text-muted-foreground" />}
                       <div className="space-y-0.5">
@@ -219,7 +219,7 @@ export default function Sala() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-3">
                     <div className="flex items-center gap-3">
                       {settings.soundEnabled ? <Volume2 className="w-5 h-5 text-primary" /> : <VolumeX className="w-5 h-5 text-muted-foreground" />}
                       <div className="space-y-0.5">
@@ -233,7 +233,7 @@ export default function Sala() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-3">
                     <div className="space-y-0.5">
                       <Label>Destaque Mesa Pausada</Label>
                       <p className="text-xs text-muted-foreground">Realça mesa pausada em azul no mapa</p>
@@ -244,7 +244,7 @@ export default function Sala() {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 rounded-lg border border-border/60 bg-background p-3">
                     <Label>Filtro do Mapa</Label>
                     <div className="flex flex-wrap gap-2">
                       {[

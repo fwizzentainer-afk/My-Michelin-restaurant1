@@ -255,7 +255,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (event.type === "SYNC_TABLES") {
         setTables(event.payload);
       } else if (event.type === "SYNC_MENUS") {
-        setMenus(event.payload);
+        if (!Array.isArray(event.payload)) return;
+        setMenus((prevMenus) => {
+          const localMenusJson = JSON.stringify(prevMenus);
+          const incomingMenusJson = JSON.stringify(event.payload);
+
+          if (localMenusJson === incomingMenusJson) {
+            if (menusPendingSyncRef.current) setMenusPendingSync(false);
+            return event.payload as Menu[];
+          }
+
+          if (menusPendingSyncRef.current && prevMenus.length > 0) {
+            return prevMenus;
+          }
+
+          return event.payload as Menu[];
+        });
       } else if (event.type === "SYNC_LOGS") {
         setHistoricalLogs(event.payload);
       } else if (event.type === "SYNC_SETTINGS") {
@@ -527,9 +542,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const next = [...prev, { ...menu, id: `m${Date.now()}` }];
       setMenusPendingSync(true);
       publishSync("SYNC_MENUS", next);
-      void syncServerState({ menus: next }).then((ok) => {
-        if (ok) setMenusPendingSync(false);
-      });
+      void syncServerState({ menus: next });
       return next;
     });
   };
@@ -540,9 +553,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const next = prev.map(m => m.id === id ? { ...m, ...updates } : m);
       setMenusPendingSync(true);
       publishSync("SYNC_MENUS", next);
-      void syncServerState({ menus: next }).then((ok) => {
-        if (ok) setMenusPendingSync(false);
-      });
+      void syncServerState({ menus: next });
       return next;
     });
   };
@@ -555,9 +566,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const next = prev.filter(m => m.id !== id);
       setMenusPendingSync(true);
       publishSync("SYNC_MENUS", next);
-      void syncServerState({ menus: next }).then((ok) => {
-        if (ok) setMenusPendingSync(false);
-      });
+      void syncServerState({ menus: next });
       return next;
     });
   };
