@@ -369,6 +369,11 @@ export default function Sala() {
                   data-testid={`map-table-${table.number}`}
                 >
                   <span className="text-lg sm:text-xl font-light tracking-[2px]">{table.number}</span>
+                  {table.pax !== null && table.pax !== undefined && (
+                    <span className="absolute -top-1 -left-1 min-w-[18px] h-[18px] px-1 rounded-full border border-primary/60 bg-[#101114] text-[10px] font-semibold leading-none text-primary flex items-center justify-center shadow-[0_0_8px_rgba(212,175,55,0.25)]">
+                      {table.pax}
+                    </span>
+                  )}
                   {(hasActiveService || isSeated) && !isPreparing && !isReady && !isPaused && !isFinished && (
                     <span className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#1a1b1e] ${isSeated ? 'bg-red-500' : 'bg-primary'}`} />
                   )}
