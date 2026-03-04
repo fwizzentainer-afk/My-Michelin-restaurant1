@@ -8,7 +8,7 @@ const statusConfig: Record<KitchenStatus, { label: string; dotColor: string; tex
   preparing: { label: "Em Preparo", dotColor: "#d4a843", textColor: "rgba(212,168,67,0.85)" },
   ready: { label: "Pronto", dotColor: "#52c78d", textColor: "rgba(82,199,141,0.85)" },
   paused: { label: "Pausado", dotColor: "#c75252", textColor: "rgba(199,82,82,0.85)" },
-  finished: { label: "Finalizado", dotColor: "#7a1f2f", textColor: "rgba(205,146,160,0.9)" },
+  finished: { label: "Finalizado", dotColor: "#7a1f2f", textColor: "rgba(237,205,221,0.95)" },
   idle: { label: "Aguardando", dotColor: "#555555", textColor: "rgba(255,255,255,0.25)" },
 };
 
@@ -283,9 +283,11 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
   return (
     <div
       style={{
-        background: isFinished ? "linear-gradient(175deg, rgba(122,31,47,0.28) 0%, rgba(64,20,28,0.35) 100%)" : "linear-gradient(175deg, #1e1e1e 0%, #181818 100%)",
+        background: isFinished
+          ? "linear-gradient(175deg, rgba(122,31,47,0.32) 0%, rgba(79,28,45,0.38) 100%)"
+          : "linear-gradient(175deg, #1e1e1e 0%, #181818 100%)",
         border: isFinished
-          ? "1px solid rgba(122,31,47,0.65)"
+          ? "1px solid rgba(122,31,47,0.68)"
           : isUrgent
           ? "1px solid rgba(212,168,67,0.5)"
           : "1px solid rgba(255,255,255,0.12)",
@@ -409,12 +411,12 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
               fontSize: "18px",
               fontWeight: 300,
               letterSpacing: "1px",
-              color: isFinished ? "rgba(240,205,212,1)" : "rgba(255,255,255,1)",
+              color: isFinished ? "rgba(247,226,238,1)" : "rgba(255,255,255,1)",
               textAlign: "center",
               padding: "12px 0",
             }}
           >
-            {isFinished ? "Serviço Finalizado" : currentMomentName || (table.status === "idle" && table.menu ? "Aguardando Início" : "—")}
+            {isFinished ? "Mesa finalizada" : currentMomentName || (table.status === "idle" && table.menu ? "Aguardando Início" : "—")}
           </p>
 
           <MomentProgress current={table.currentMoment} total={table.totalMoments} />
@@ -482,9 +484,9 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
                   width: "100%",
                   height: 52,
                   borderRadius: 12,
-                  background: "rgba(122,31,47,0.25)",
-                  border: "1px solid rgba(122,31,47,0.55)",
-                  color: "rgba(240,205,212,1)",
+                  background: "rgba(122,31,47,0.24)",
+                  border: "1px solid rgba(122,31,47,0.6)",
+                  color: "rgba(247,226,238,1)",
                   fontSize: "10px",
                   letterSpacing: "3.5px",
                   textTransform: "uppercase",

@@ -133,7 +133,6 @@ export default function Sala() {
         lastMomentTime: now,
         momentsHistory: updatedHistory,
       });
-      setSelectedTableId(null);
       return;
     }
 
@@ -277,7 +276,7 @@ export default function Sala() {
           <div className="flex flex-wrap gap-2 sm:gap-3 text-[9px] sm:text-xs text-muted-foreground uppercase tracking-widest justify-end">
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-card border border-border" /> Livre</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-600 border border-red-500" /> Sentada</div>
-            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#7a1f2f]/25 border border-[#7a1f2f]" /> Finalizado</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-violet-500/20 border border-violet-500" /> Pronta para cobrar</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500/20 border border-amber-500" /> Prepara</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500/20 border border-blue-500" /> Mesa pausada</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500" /> Pronto</div>
@@ -327,7 +326,7 @@ export default function Sala() {
             } else if (isPaused && highlightPausedTables) {
               colorClass = "border-blue-500 bg-blue-500/20 text-blue-300 shadow-[0_0_20px_rgba(59,130,246,0.35)]";
             } else if (isFinished) {
-              colorClass = "border-[#7a1f2f] bg-[#7a1f2f]/25 text-[#e7b8c3] shadow-[0_0_20px_rgba(122,31,47,0.35)]";
+              colorClass = "border-violet-500 bg-violet-500/20 text-violet-200 shadow-[0_0_20px_rgba(139,92,246,0.35)]";
             } else if (hasActiveService) {
               colorClass = "border-primary/60 bg-primary/10 text-primary shadow-[0_0_15px_rgba(212,175,55,0.15)]";
             } else if (isSeated) {
@@ -383,7 +382,7 @@ export default function Sala() {
                     <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[#1a1b1e] shadow-[0_0_8px_#10b981]" />
                   )}
                   {isFinished && (
-                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#7a1f2f] rounded-full border-2 border-[#1a1b1e] shadow-[0_0_8px_#7a1f2f]" />
+                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-violet-500 rounded-full border-2 border-[#1a1b1e] shadow-[0_0_8px_#8b5cf6]" />
                   )}
                   {table.restrictions.type && (
                     <span className="absolute -bottom-1 -left-1 w-3.5 h-3.5 bg-destructive rounded-full border-2 border-[#1a1b1e] flex items-center justify-center">
@@ -615,7 +614,7 @@ export default function Sala() {
                   {selectedTable.status === 'ready' ? 'Pronto na Cozinha' : 
                    selectedTable.status === 'preparing' ? 'Preparando' : 
                    selectedTable.status === 'paused' ? 'Pausado' :
-                   selectedTable.status === 'finished' ? 'Finalizado' : 'Aguardando'}
+                   selectedTable.status === 'finished' ? 'Pronta para cobrar' : 'Aguardando'}
                 </Badge>
               </div>
             </CardHeader>
@@ -628,7 +627,7 @@ export default function Sala() {
                   <div className="absolute inset-0 bg-emerald-500/5" />
                 )}
                 {selectedTable.status === 'finished' && (
-                  <div className="absolute inset-0 bg-[#7a1f2f]/10" />
+                  <div className="absolute inset-0 bg-violet-500/10" />
                 )}
                 
                 <span className="text-xs uppercase tracking-widest text-muted-foreground mb-3 relative z-10">Momento Atual</span>
@@ -658,9 +657,9 @@ export default function Sala() {
                     </div>
                   )}
                   {selectedTable.status === 'finished' && (
-                    <div className="flex items-center text-[#e7b8c3] text-sm font-medium mt-2 bg-[#7a1f2f]/20 px-4 py-1.5 rounded-full border border-[#7a1f2f]/40">
+                    <div className="flex items-center text-violet-200 text-sm font-medium mt-2 bg-violet-500/20 px-4 py-1.5 rounded-full border border-violet-500/40">
                       <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Serviço finalizado
+                      Pronta para cobrar
                     </div>
                   )}
                   {selectedTable.currentMoment === 0 && (
@@ -683,14 +682,14 @@ export default function Sala() {
                 {selectedTable.status === 'paused' ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
               </Button>
               
-              {selectedTable.currentMoment >= (selectedTable.totalMoments - 2) ? (
+              {selectedTable.status === 'finished' ? (
                 <Button 
                   className="flex-1 h-14 bg-emerald-600 text-white hover:bg-emerald-700 text-lg tracking-wide shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all"
                   onClick={handleForceFinish}
                   data-testid="button-finish-service"
                 >
                   <Check className="w-5 h-5 mr-2" />
-                  Finalizar Serviço
+                  Finalizar Mesa
                 </Button>
               ) : (
                 <Button 
