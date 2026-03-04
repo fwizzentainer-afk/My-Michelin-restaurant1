@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useStore, Menu, Table, MomentLog, HistoricalService } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,8 +18,18 @@ export default function Admin() {
   
   const [newMenuName, setNewMenuName] = useState("");
   const [newMoments, setNewMoments] = useState<string[]>([""]);
+  const [newDisplayTotalMoments, setNewDisplayTotalMoments] = useState(0);
+  const [newCombineFirstTwoMoments, setNewCombineFirstTwoMoments] = useState(true);
+  const [newCombineLastTwoMoments, setNewCombineLastTwoMoments] = useState(true);
+  const [newCustomGroupingEnabled, setNewCustomGroupingEnabled] = useState(false);
+  const [newCustomGroupingRules, setNewCustomGroupingRules] = useState("");
   const [editingMenuId, setEditingMenuId] = useState<string | null>(null);
   const [editingMoments, setEditingMoments] = useState<string[]>([]);
+  const [editingDisplayTotalMoments, setEditingDisplayTotalMoments] = useState(0);
+  const [editingCombineFirstTwoMoments, setEditingCombineFirstTwoMoments] = useState(true);
+  const [editingCombineLastTwoMoments, setEditingCombineLastTwoMoments] = useState(true);
+  const [editingCustomGroupingEnabled, setEditingCustomGroupingEnabled] = useState(false);
+  const [editingCustomGroupingRules, setEditingCustomGroupingRules] = useState("");
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newUserRole, setNewUserRole] = useState<"sala" | "cozinha" | "admin">("sala");
@@ -29,6 +39,11 @@ export default function Admin() {
   const [dateRange, setDateRange] = useState<string>("today"); // 'today', 'week', 'all'
   const [compareMode, setCompareMode] = useState<boolean>(false);
   const [selectedMenuFilter, setSelectedMenuFilter] = useState<string>("all");
+  const newMinimumDisplayTotal = newMoments.length + (newCombineFirstTwoMoments ? 1 : 0) + (newCombineLastTwoMoments ? 1 : 0);
+
+  useEffect(() => {
+    setNewDisplayTotalMoments((prev) => Math.max(prev || newMinimumDisplayTotal, newMinimumDisplayTotal));
+  }, [newMinimumDisplayTotal]);
 
   const formatDuration = (ms: number) => {
     if (!ms || ms < 0) return "0s";
@@ -221,9 +236,34 @@ export default function Admin() {
       return;
     }
 
-    createMenu({ name: newMenuName, moments: newMoments, isActive: false });
+    if (newDisplayTotalMoments < newMinimumDisplayTotal) {
+      toast({
+        title: "Erro",
+        description: `Total de momentos deve ser no mínimo ${newMinimumDisplayTotal} para a configuração escolhida.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const forceCombinedEdges = newDisplayTotalMoments === 9 || newDisplayTotalMoments === 11;
+
+    createMenu({
+      name: newMenuName,
+      moments: newMoments,
+      isActive: false,
+      displayTotalMoments: newDisplayTotalMoments,
+      combineFirstTwoMoments: forceCombinedEdges ? true : newCombineFirstTwoMoments,
+      combineLastTwoMoments: forceCombinedEdges ? true : newCombineLastTwoMoments,
+      customGroupingEnabled: newCustomGroupingEnabled,
+      customGroupingRules: newCustomGroupingRules.trim(),
+    });
     setNewMenuName("");
     setNewMoments([""]);
+    setNewCombineFirstTwoMoments(true);
+    setNewCombineLastTwoMoments(true);
+    setNewCustomGroupingEnabled(false);
+    setNewCustomGroupingRules("");
+    setNewDisplayTotalMoments(0);
     toast({ title: "Sucesso", description: "Menu criado com sucesso" });
   };
 
@@ -244,11 +284,21 @@ export default function Admin() {
   const startEditingMenu = (menu: Menu) => {
     setEditingMenuId(menu.id);
     setEditingMoments(menu.moments.length ? [...menu.moments] : [""]);
+    setEditingDisplayTotalMoments(menu.displayTotalMoments);
+    setEditingCombineFirstTwoMoments(menu.combineFirstTwoMoments);
+    setEditingCombineLastTwoMoments(menu.combineLastTwoMoments);
+    setEditingCustomGroupingEnabled(menu.customGroupingEnabled ?? false);
+    setEditingCustomGroupingRules(menu.customGroupingRules ?? "");
   };
 
   const cancelEditingMenu = () => {
     setEditingMenuId(null);
     setEditingMoments([]);
+    setEditingDisplayTotalMoments(0);
+    setEditingCombineFirstTwoMoments(true);
+    setEditingCombineLastTwoMoments(true);
+    setEditingCustomGroupingEnabled(false);
+    setEditingCustomGroupingRules("");
   };
 
   const updateEditingMoment = (index: number, value: string) => {
@@ -272,6 +322,7 @@ export default function Admin() {
 
   const saveEditingMenu = (menu: Menu) => {
     const cleaned = editingMoments.map((m) => m.trim()).filter(Boolean);
+    const editingMinimumDisplayTotal = cleaned.length + (editingCombineFirstTwoMoments ? 1 : 0) + (editingCombineLastTwoMoments ? 1 : 0);
     if (!cleaned.length) {
       toast({
         title: "Menu inválido",
@@ -281,7 +332,25 @@ export default function Admin() {
       return;
     }
 
-    updateMenu(menu.id, { moments: cleaned });
+    if (editingDisplayTotalMoments < editingMinimumDisplayTotal) {
+      toast({
+        title: "Menu inválido",
+        description: `Total de momentos deve ser no mínimo ${editingMinimumDisplayTotal}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const forceCombinedEdges = editingDisplayTotalMoments === 9 || editingDisplayTotalMoments === 11;
+
+    updateMenu(menu.id, {
+      moments: cleaned,
+      displayTotalMoments: editingDisplayTotalMoments,
+      combineFirstTwoMoments: forceCombinedEdges ? true : editingCombineFirstTwoMoments,
+      combineLastTwoMoments: forceCombinedEdges ? true : editingCombineLastTwoMoments,
+      customGroupingEnabled: editingCustomGroupingEnabled,
+      customGroupingRules: editingCustomGroupingRules.trim(),
+    });
     toast({ title: "Menu atualizado", description: `${menu.name} foi atualizado com sucesso.` });
     cancelEditingMenu();
   };
@@ -424,6 +493,8 @@ export default function Admin() {
                 {activeTables.map(table => {
                   const currentLog = table.momentsHistory.find(l => l.momentNumber === table.currentMoment);
                   const isDelayed = currentLog && !currentLog.readyTime && (Date.now() - currentLog.startTime!) > IDEAL_PREP_TIME;
+                  const menuConfig = menus.find((m) => m.name === table.menu);
+                  const totalDisplay = menuConfig?.displayTotalMoments ?? table.totalMoments;
                   
                   return (
                     <Card key={table.id} className={`border-border/60 bg-card transition-colors ${isDelayed ? 'border-destructive/50 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : ''}`}>
@@ -442,7 +513,7 @@ export default function Admin() {
                           <div className="p-4">
                             <div className="flex justify-between items-start mb-4">
                               <div>
-                                <Badge variant="outline" className="mb-2 bg-background">Momento {table.currentMoment} / {table.totalMoments}</Badge>
+                                <Badge variant="outline" className="mb-2 bg-background">Momento {table.currentMoment} / {totalDisplay}</Badge>
                                 <h4 className="font-medium text-foreground text-sm">{currentLog?.momentName || "Aguardando..."}</h4>
                               </div>
                               {table.status === 'preparing' && (
@@ -656,8 +727,19 @@ export default function Admin() {
                       {menu.isActive && <span className="bg-primary/20 text-primary text-[10px] uppercase px-2 py-0.5 rounded border border-primary/30">Ativo</span>}
                     </div>
                     <p className="text-sm text-muted-foreground mb-4">
-                      {menu.moments.length} Momentos cadastrados
+                      {menu.moments.length} etapas cadastradas · {menu.displayTotalMoments} momentos reais
                     </p>
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      <Badge variant="outline" className="text-[10px]">
+                        1º e 2º: {menu.combineFirstTwoMoments ? "Juntos" : "Separados"}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px]">
+                        Final: {menu.combineLastTwoMoments ? "Juntos" : "Separados"}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px]">
+                        Agrupamento custom: {menu.customGroupingEnabled ? "ON" : "OFF"}
+                      </Badge>
+                    </div>
                     {editingMenuId === menu.id ? (
                       <div className="space-y-2 rounded-lg border border-border/60 bg-background p-3">
                         {editingMoments.map((moment, idx) => (
@@ -683,6 +765,46 @@ export default function Admin() {
                           <Plus className="w-4 h-4 mr-2" />
                           Adicionar Momento
                         </Button>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-border/30">
+                          <div className="space-y-1 sm:col-span-1">
+                            <Label className="text-[10px] uppercase tracking-[2px] text-muted-foreground">Total real</Label>
+                            <Input
+                              type="number"
+                              min={editingMoments.length}
+                              value={editingDisplayTotalMoments}
+                              onChange={(e) => setEditingDisplayTotalMoments(Math.max(0, Number(e.target.value) || 0))}
+                              className="h-8 bg-background"
+                            />
+                          </div>
+                          <div className="space-y-1 sm:col-span-1">
+                            <Label className="text-[10px] uppercase tracking-[2px] text-muted-foreground">1º e 2º</Label>
+                            <div className="grid grid-cols-2 gap-1">
+                              <Button type="button" size="sm" variant={editingCombineFirstTwoMoments ? "default" : "outline"} onClick={() => setEditingCombineFirstTwoMoments(true)}>Juntos</Button>
+                              <Button type="button" size="sm" variant={!editingCombineFirstTwoMoments ? "default" : "outline"} onClick={() => setEditingCombineFirstTwoMoments(false)}>Separados</Button>
+                            </div>
+                          </div>
+                          <div className="space-y-1 sm:col-span-1">
+                            <Label className="text-[10px] uppercase tracking-[2px] text-muted-foreground">Penúltimo e último</Label>
+                            <div className="grid grid-cols-2 gap-1">
+                              <Button type="button" size="sm" variant={editingCombineLastTwoMoments ? "default" : "outline"} onClick={() => setEditingCombineLastTwoMoments(true)}>Juntos</Button>
+                              <Button type="button" size="sm" variant={!editingCombineLastTwoMoments ? "default" : "outline"} onClick={() => setEditingCombineLastTwoMoments(false)}>Separados</Button>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2 rounded-md border border-border/50 p-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-[10px] uppercase tracking-[2px] text-muted-foreground">Agrupar momentos custom</Label>
+                            <Switch checked={editingCustomGroupingEnabled} onCheckedChange={setEditingCustomGroupingEnabled} />
+                          </div>
+                          {editingCustomGroupingEnabled && (
+                            <Input
+                              value={editingCustomGroupingRules}
+                              onChange={(e) => setEditingCustomGroupingRules(e.target.value)}
+                              placeholder="Ex: 1=1&3; 2=2; 3=4&5"
+                              className="h-8 bg-background"
+                            />
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-1.5">
@@ -790,6 +912,46 @@ export default function Admin() {
                   <Button variant="outline" size="sm" className="w-full border-dashed border-border/60 mt-2" onClick={handleAddMoment}>
                     <Plus className="w-4 h-4 mr-2" /> Adicionar Momento
                   </Button>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-border/30">
+                    <div className="space-y-1 sm:col-span-1">
+                      <Label className="text-[10px] uppercase tracking-[2px] text-muted-foreground">Total real</Label>
+                      <Input
+                        type="number"
+                        min={newMinimumDisplayTotal}
+                        value={newDisplayTotalMoments}
+                        onChange={(e) => setNewDisplayTotalMoments(Math.max(0, Number(e.target.value) || 0))}
+                        className="bg-background border-border/60 h-9"
+                      />
+                    </div>
+                    <div className="space-y-1 sm:col-span-1">
+                      <Label className="text-[10px] uppercase tracking-[2px] text-muted-foreground">1º e 2º</Label>
+                      <div className="grid grid-cols-2 gap-1">
+                        <Button type="button" size="sm" variant={newCombineFirstTwoMoments ? "default" : "outline"} onClick={() => setNewCombineFirstTwoMoments(true)}>Juntos</Button>
+                        <Button type="button" size="sm" variant={!newCombineFirstTwoMoments ? "default" : "outline"} onClick={() => setNewCombineFirstTwoMoments(false)}>Separados</Button>
+                      </div>
+                    </div>
+                    <div className="space-y-1 sm:col-span-1">
+                      <Label className="text-[10px] uppercase tracking-[2px] text-muted-foreground">Penúltimo e último</Label>
+                      <div className="grid grid-cols-2 gap-1">
+                        <Button type="button" size="sm" variant={newCombineLastTwoMoments ? "default" : "outline"} onClick={() => setNewCombineLastTwoMoments(true)}>Juntos</Button>
+                        <Button type="button" size="sm" variant={!newCombineLastTwoMoments ? "default" : "outline"} onClick={() => setNewCombineLastTwoMoments(false)}>Separados</Button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2 rounded-md border border-border/50 p-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] uppercase tracking-[2px] text-muted-foreground">Agrupar momentos custom</Label>
+                      <Switch checked={newCustomGroupingEnabled} onCheckedChange={setNewCustomGroupingEnabled} />
+                    </div>
+                    {newCustomGroupingEnabled && (
+                      <Input
+                        value={newCustomGroupingRules}
+                        onChange={(e) => setNewCustomGroupingRules(e.target.value)}
+                        placeholder="Ex: 1=1&3; 2=2; 3=4&5"
+                        className="bg-background border-border/60 h-9"
+                      />
+                    )}
+                  </div>
                 </div>
 
                 <div className="pt-4 border-t border-border/20">

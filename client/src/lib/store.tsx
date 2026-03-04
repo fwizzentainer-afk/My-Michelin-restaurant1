@@ -38,6 +38,11 @@ export interface Menu {
   name: string;
   moments: string[];
   isActive: boolean;
+  displayTotalMoments: number;
+  combineFirstTwoMoments: boolean;
+  combineLastTwoMoments: boolean;
+  customGroupingEnabled: boolean;
+  customGroupingRules: string;
 }
 
 export interface HistoricalService {
@@ -109,8 +114,28 @@ const defaultTables: Table[] = tableNumbers.map((num) => ({
 }));
 
 const defaultMenus: Menu[] = [
-  { id: 'm1', name: 'Menu 9 momentos', moments: ['Crocante de sementes & coalhada', 'Moluscos', 'Peixe', 'Verão', 'Carne', 'Arroz con leche', 'Bolo de milho & rosquilha de chocolate'], isActive: true },
-  { id: 'm2', name: 'Menu 11 momentos', moments: ['Crocante de sementes & coalhada', 'Moluscos', 'Lagostim', 'Peixe', 'Verão', 'Carne', 'Texturas de abóbora', 'Arroz con leche', 'Bolo de milho & rosquilha de chocolate'], isActive: true },
+  {
+    id: 'm1',
+    name: 'Menu 9 momentos',
+    moments: ['Crocante de sementes & coalhada', 'Moluscos', 'Peixe', 'Verão', 'Carne', 'Arroz con leche', 'Bolo de milho & rosquilha de chocolate'],
+    isActive: true,
+    displayTotalMoments: 9,
+    combineFirstTwoMoments: true,
+    combineLastTwoMoments: true,
+    customGroupingEnabled: false,
+    customGroupingRules: "",
+  },
+  {
+    id: 'm2',
+    name: 'Menu 11 momentos',
+    moments: ['Crocante de sementes & coalhada', 'Moluscos', 'Lagostim', 'Peixe', 'Verão', 'Carne', 'Texturas de abóbora', 'Arroz con leche', 'Bolo de milho & rosquilha de chocolate'],
+    isActive: true,
+    displayTotalMoments: 11,
+    combineFirstTwoMoments: true,
+    combineLastTwoMoments: true,
+    customGroupingEnabled: false,
+    customGroupingRules: "",
+  },
 ];
 
 const defaultPairings = ['Essencial', 'Gastronômico', 'À Carta', 'Sem Pearing'];
@@ -127,6 +152,28 @@ const defaultSettings: StoreState["settings"] = {
 
 const StoreContext = createContext<StoreState | undefined>(undefined);
 const SYNC_CHANNEL = "michelin_sync";
+
+const normalizeMenu = (menu: Partial<Menu> & Pick<Menu, "id" | "name" | "moments" | "isActive">): Menu => {
+  const combineFirstTwoMoments = menu.combineFirstTwoMoments ?? true;
+  const combineLastTwoMoments = menu.combineLastTwoMoments ?? true;
+  const minimumDisplayTotal = menu.moments.length + (combineFirstTwoMoments ? 1 : 0) + (combineLastTwoMoments ? 1 : 0);
+  const displayTotalMoments =
+    typeof menu.displayTotalMoments === "number" && Number.isFinite(menu.displayTotalMoments)
+      ? Math.max(Math.floor(menu.displayTotalMoments), minimumDisplayTotal)
+      : minimumDisplayTotal;
+
+  return {
+    id: menu.id,
+    name: menu.name,
+    moments: menu.moments,
+    isActive: menu.isActive,
+    displayTotalMoments,
+    combineFirstTwoMoments,
+    combineLastTwoMoments,
+    customGroupingEnabled: menu.customGroupingEnabled ?? false,
+    customGroupingRules: menu.customGroupingRules ?? "",
+  };
+};
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const loadTables = (): Table[] => {
@@ -163,9 +210,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     try {
       const raw = localStorage.getItem(MENUS_STORAGE_KEY);
       if (!raw) return defaultMenus;
-      const parsed = JSON.parse(raw) as Menu[];
+      const parsed = JSON.parse(raw) as Array<Partial<Menu> & Pick<Menu, "id" | "name" | "moments" | "isActive">>;
       if (!Array.isArray(parsed) || parsed.length === 0) return defaultMenus;
-      return parsed;
+      return parsed.map(normalizeMenu);
     } catch {
       return defaultMenus;
     }
@@ -257,19 +304,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       } else if (event.type === "SYNC_MENUS") {
         if (!Array.isArray(event.payload)) return;
         setMenus((prevMenus) => {
+          const normalizedIncoming = (event.payload as Array<Partial<Menu> & Pick<Menu, "id" | "name" | "moments" | "isActive">>).map(normalizeMenu);
           const localMenusJson = JSON.stringify(prevMenus);
-          const incomingMenusJson = JSON.stringify(event.payload);
+          const incomingMenusJson = JSON.stringify(normalizedIncoming);
 
           if (localMenusJson === incomingMenusJson) {
             if (menusPendingSyncRef.current) setMenusPendingSync(false);
-            return event.payload as Menu[];
+            return normalizedIncoming;
           }
 
           if (menusPendingSyncRef.current && prevMenus.length > 0) {
             return prevMenus;
           }
 
-          return event.payload as Menu[];
+          return normalizedIncoming;
         });
       } else if (event.type === "SYNC_LOGS") {
         setHistoricalLogs(event.payload);
@@ -339,13 +387,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
         if (Array.isArray(payload.tables) && payload.tables.length > 0) setTables(payload.tables);
         if (Array.isArray(payload.menus) && payload.menus.length > 0) {
+          const normalizedServerMenus = (payload.menus as Array<Partial<Menu> & Pick<Menu, "id" | "name" | "moments" | "isActive">>).map(normalizeMenu);
           setMenus((prevMenus) => {
             const localMenusJson = JSON.stringify(prevMenus);
-            const serverMenusJson = JSON.stringify(payload.menus);
+            const serverMenusJson = JSON.stringify(normalizedServerMenus);
 
             if (localMenusJson === serverMenusJson) {
               if (menusPendingSyncRef.current) setMenusPendingSync(false);
-              return payload.menus as Menu[];
+              return normalizedServerMenus;
             }
 
             if (menusPendingSyncRef.current && prevMenus.length > 0) {
@@ -355,7 +404,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               return prevMenus;
             }
 
-            return payload.menus as Menu[];
+            return normalizedServerMenus;
           });
         }
         if (Array.isArray(payload.historicalLogs)) setHistoricalLogs(payload.historicalLogs);
@@ -539,7 +588,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const createMenu = (menu: Omit<Menu, 'id'>) => {
     if (role !== "admin") return;
     setMenus(prev => {
-      const next = [...prev, { ...menu, id: `m${Date.now()}` }];
+      const next = [...prev, normalizeMenu({ ...menu, id: `m${Date.now()}` })];
       setMenusPendingSync(true);
       publishSync("SYNC_MENUS", next);
       void syncServerState({ menus: next });
@@ -550,7 +599,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const updateMenu = (id: string, updates: Partial<Menu>) => {
     if (role !== "admin") return;
     setMenus(prev => {
-      const next = prev.map(m => m.id === id ? { ...m, ...updates } : m);
+      const next = prev.map((m) => (m.id === id ? normalizeMenu({ ...m, ...updates }) : m));
       setMenusPendingSync(true);
       publishSync("SYNC_MENUS", next);
       void syncServerState({ menus: next });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useStore, Table } from "@/lib/store";
+import { useStore, Menu, Table } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check, Settings, Volume2, VolumeX, Bell, BellOff, XCircle, Utensils, UserCheck, AlertTriangle, Languages, Users } from "lucide-react";
@@ -49,10 +49,28 @@ export default function Sala() {
     return "service";
   };
 
-  const getMomentDisplay = (moment: number, total: number) => {
+  const getCustomMomentLabel = (menuConfig: Menu | undefined, step: number, total: number, displayTotal: number) => {
+    if (!menuConfig?.customGroupingEnabled || !menuConfig.customGroupingRules) return null;
+    if ((displayTotal === 9 || displayTotal === 11) && (step === 1 || step === total - 1)) return null;
+    const rules = menuConfig.customGroupingRules
+      .split(";")
+      .map((r) => r.trim())
+      .filter(Boolean);
+    for (const rule of rules) {
+      const [left, right] = rule.split("=").map((v) => v?.trim());
+      const stepNum = Number(left);
+      if (!Number.isFinite(stepNum) || !right) continue;
+      if (stepNum === step) return right.replace(/^M/i, "");
+    }
+    return null;
+  };
+
+  const getMomentDisplay = (moment: number, total: number, displayTotal: number, menuConfig?: Menu) => {
     if (moment === 0) return "0";
+    const custom = getCustomMomentLabel(menuConfig, moment, total, displayTotal);
+    if (custom) return custom;
     if (moment === 1) return "1&2";
-    if (moment === total - 1) return `${total-1}&${total}`;
+    if (moment === total - 1) return `${displayTotal - 1}&${displayTotal}`;
     return moment + 1;
   };
 
@@ -432,6 +450,8 @@ export default function Sala() {
 
   const step = getStep(selectedTable);
   const currentMomentName = selectedTable.momentsHistory.find(h => h.momentNumber === selectedTable.currentMoment)?.momentName;
+  const selectedMenuConfig = menus.find((m) => m.name === selectedTable.menu);
+  const displayTotalMoments = selectedMenuConfig?.displayTotalMoments ?? selectedTable.totalMoments;
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto w-full animate-in fade-in duration-300">
@@ -661,8 +681,8 @@ export default function Sala() {
                 
                 <span className="text-xs uppercase tracking-widest text-muted-foreground mb-3 relative z-10">Momento Atual</span>
                 <div className="text-6xl font-light text-foreground mb-2 relative z-10 drop-shadow-md">
-                  {getMomentDisplay(selectedTable.currentMoment, selectedTable.totalMoments)} 
-                  <span className="text-muted-foreground/50 text-4xl"> / {selectedTable.totalMoments}</span>
+                  {getMomentDisplay(selectedTable.currentMoment, selectedTable.totalMoments, displayTotalMoments, selectedMenuConfig)} 
+                  <span className="text-muted-foreground/50 text-4xl"> / {displayTotalMoments}</span>
                 </div>
 
                 {currentMomentName && (

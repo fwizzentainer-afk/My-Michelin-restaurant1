@@ -1,4 +1,4 @@
-import { useStore, Table } from "@/lib/store";
+import { useStore, Menu, Table } from "@/lib/store";
 import { CheckCircle2, Clock, AlertCircle, AlertTriangle, Utensils } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -212,14 +212,19 @@ export default function Cozinha() {
               gap: 20,
             }}
           >
-            {visibleTables.map((table) => (
-              <CozinhaTableCard
-                key={table.id}
-                table={table}
-                onReady={() => handleReady(table.id)}
-                menuMoments={menus.find((m) => m.name === table.menu)?.moments || []}
-              />
-            ))}
+            {visibleTables.map((table) => {
+              const menuConfig = menus.find((m) => m.name === table.menu);
+              return (
+                <CozinhaTableCard
+                  key={table.id}
+                  table={table}
+                  onReady={() => handleReady(table.id)}
+                  menuMoments={menuConfig?.moments || []}
+                  displayTotalMoments={menuConfig?.displayTotalMoments ?? table.totalMoments}
+                  menuConfig={menuConfig}
+                />
+              );
+            })}
           </div>
         )}
       </div>
@@ -246,7 +251,19 @@ function MomentProgress({ current, total }: { current: number; total: number }) 
   );
 }
 
-function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onReady: () => void; menuMoments: string[] }) {
+function CozinhaTableCard({
+  table,
+  onReady,
+  menuMoments,
+  displayTotalMoments,
+  menuConfig,
+}: {
+  table: Table;
+  onReady: () => void;
+  menuMoments: string[];
+  displayTotalMoments: number;
+  menuConfig?: Menu;
+}) {
   const [elapsed, setElapsed] = useState(0);
   const [ticketOpen, setTicketOpen] = useState(false);
 
@@ -268,10 +285,28 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
 
-  const getMomentDisplay = (moment: number, total: number) => {
+  const getCustomMomentLabel = (step: number, total: number, displayTotal: number) => {
+    if (!menuConfig?.customGroupingEnabled || !menuConfig.customGroupingRules) return null;
+    if ((displayTotal === 9 || displayTotal === 11) && (step === 1 || step === total - 1)) return null;
+    const rules = menuConfig.customGroupingRules
+      .split(";")
+      .map((r) => r.trim())
+      .filter(Boolean);
+    for (const rule of rules) {
+      const [left, right] = rule.split("=").map((v) => v?.trim());
+      const stepNum = Number(left);
+      if (!Number.isFinite(stepNum) || !right) continue;
+      if (stepNum === step) return right.replace(/^M/i, "");
+    }
+    return null;
+  };
+
+  const getMomentDisplay = (moment: number, total: number, displayTotal: number) => {
     if (moment === 0) return "0";
+    const custom = getCustomMomentLabel(moment, total, displayTotal);
+    if (custom) return custom.replace(/&/g, " & ");
     if (moment === 1) return "1 & 2";
-    if (moment === total - 1) return `${total - 1} & ${total}`;
+    if (moment === total - 1) return `${displayTotal - 1} & ${displayTotal}`;
     return String(moment + 1);
   };
 
@@ -282,9 +317,11 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
   const restrictionType = table.restrictions.type ? table.restrictions.type.charAt(0).toUpperCase() + table.restrictions.type.slice(1) : "";
   const totalSteps = Math.max(table.totalMoments || 0, menuMoments.length || 0);
 
-  const formatMomentLabel = (moment: number, total: number) => {
+  const formatMomentLabel = (moment: number, total: number, displayTotal: number) => {
+    const custom = getCustomMomentLabel(moment, total, displayTotal);
+    if (custom) return `M${custom}`;
     if (moment === 1) return "M1&2";
-    if (moment === total - 1) return `M${total - 1}&${total}`;
+    if (moment === total - 1) return `M${displayTotal - 1}&${displayTotal}`;
     return `M${moment + 1}`;
   };
 
@@ -440,7 +477,7 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
                 borderRadius: 20,
               }}
             >
-              {getMomentDisplay(table.currentMoment, table.totalMoments)} / {table.totalMoments}
+              {getMomentDisplay(table.currentMoment, table.totalMoments, displayTotalMoments)} / {displayTotalMoments}
             </span>
           </div>
 
@@ -696,7 +733,7 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
                         >
                           <span style={{ width: 18, textAlign: "center" }}>{done ? "✓" : "☐"}</span>
                           <span>
-                            {formatMomentLabel(momentNumber, totalSteps)} - {momentName}
+                            {formatMomentLabel(momentNumber, totalSteps, displayTotalMoments)} - {momentName}
                           </span>
                         </div>
                         <span style={{ fontSize: 14, color: done ? "rgba(82,199,141,0.95)" : "rgba(255,255,255,0.45)", minWidth: 50, textAlign: "right" }}>
