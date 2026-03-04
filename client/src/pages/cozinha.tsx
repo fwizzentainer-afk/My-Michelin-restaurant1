@@ -18,6 +18,8 @@ export default function Cozinha() {
   const activeTables = tables.filter(
     (t) => t.status !== "finished" && t.menu && (t.currentMoment > 0 || t.momentsHistory.some((h) => h.momentNumber === -1)),
   );
+  const finishedTables = tables.filter((t) => t.status === "finished" && t.menu);
+  const visibleTables = [...activeTables, ...finishedTables];
   const preparingTables = activeTables.filter((t) => t.status === "preparing");
   const readyTables = activeTables.filter((t) => t.status === "ready");
   const seatedTables = tables.filter(
@@ -184,7 +186,7 @@ export default function Cozinha() {
           </div>
         </header>
 
-        {activeTables.length === 0 ? (
+        {visibleTables.length === 0 ? (
           <div
             style={{
               border: "1px dashed rgba(255,255,255,0.06)",
@@ -210,7 +212,7 @@ export default function Cozinha() {
               gap: 20,
             }}
           >
-            {activeTables.map((table) => (
+            {visibleTables.map((table) => (
               <CozinhaTableCard
                 key={table.id}
                 table={table}
@@ -275,14 +277,21 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
   const currentMomentName = table.currentMoment > 0 ? menuMoments[table.currentMoment - 1] : null;
   const cfg = statusConfig[(table.status as KitchenStatus) ?? "idle"];
   const isUrgent = table.status === "preparing" && elapsed > 900;
+  const isFinished = table.status === "finished";
   const restrictionType = table.restrictions.type ? table.restrictions.type.charAt(0).toUpperCase() + table.restrictions.type.slice(1) : "";
 
   return (
     <div
       style={{
-        background: "linear-gradient(175deg, #1e1e1e 0%, #181818 100%)",
-        border: isUrgent ? "1px solid rgba(212,168,67,0.5)" : "1px solid rgba(255,255,255,0.12)",
-        boxShadow: isUrgent
+        background: isFinished ? "linear-gradient(175deg, rgba(122,31,47,0.28) 0%, rgba(64,20,28,0.35) 100%)" : "linear-gradient(175deg, #1e1e1e 0%, #181818 100%)",
+        border: isFinished
+          ? "1px solid rgba(122,31,47,0.65)"
+          : isUrgent
+          ? "1px solid rgba(212,168,67,0.5)"
+          : "1px solid rgba(255,255,255,0.12)",
+        boxShadow: isFinished
+          ? "0 24px 56px rgba(0,0,0,0.5), 0 0 0 1px rgba(122,31,47,0.35) inset"
+          : isUrgent
           ? "0 24px 56px rgba(0,0,0,0.6), 0 0 0 1px rgba(212,168,67,0.2) inset"
           : "0 24px 56px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.06) inset",
         borderRadius: "20px",
@@ -328,7 +337,7 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
         </div>
       )}
 
-      <div style={{ padding: "28px 28px 22px", borderBottom: "1px solid rgba(255,255,255,0.09)" }}>
+      <div style={{ padding: "28px 28px 22px", borderBottom: isFinished ? "1px solid rgba(122,31,47,0.45)" : "1px solid rgba(255,255,255,0.09)" }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div
@@ -400,12 +409,12 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
               fontSize: "18px",
               fontWeight: 300,
               letterSpacing: "1px",
-              color: "rgba(255,255,255,1)",
+              color: isFinished ? "rgba(240,205,212,1)" : "rgba(255,255,255,1)",
               textAlign: "center",
               padding: "12px 0",
             }}
           >
-            {currentMomentName || (table.status === "idle" && table.menu ? "Aguardando Início" : "—")}
+            {isFinished ? "Serviço Finalizado" : currentMomentName || (table.status === "idle" && table.menu ? "Aguardando Início" : "—")}
           </p>
 
           <MomentProgress current={table.currentMoment} total={table.totalMoments} />
@@ -468,6 +477,19 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
                   cursor: "pointer",
                   transition: "all 0.3s ease",
                 }
+              : table.status === "finished"
+              ? {
+                  width: "100%",
+                  height: 52,
+                  borderRadius: 12,
+                  background: "rgba(122,31,47,0.25)",
+                  border: "1px solid rgba(122,31,47,0.55)",
+                  color: "rgba(240,205,212,1)",
+                  fontSize: "10px",
+                  letterSpacing: "3.5px",
+                  textTransform: "uppercase",
+                  cursor: "default",
+                }
               : table.status === "ready"
               ? {
                   width: "100%",
@@ -495,7 +517,12 @@ function CozinhaTableCard({ table, onReady, menuMoments }: { table: Table; onRea
                 }
           }
         >
-          {table.status === "ready" ? (
+          {table.status === "finished" ? (
+            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <CheckCircle2 style={{ width: 14, height: 14 }} />
+              Finalizado
+            </span>
+          ) : table.status === "ready" ? (
             <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
               <CheckCircle2 style={{ width: 14, height: 14 }} />
               Pronto para Servir

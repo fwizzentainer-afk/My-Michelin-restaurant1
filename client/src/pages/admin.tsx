@@ -484,7 +484,7 @@ export default function Admin() {
                   <SelectTrigger className="w-[140px] h-8 text-xs bg-background">
                     <SelectValue placeholder="Período" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-card border-border text-foreground">
                     <SelectItem value="today">Hoje</SelectItem>
                     <SelectItem value="week">Últimos 7 dias</SelectItem>
                     <SelectItem value="all">Todo Histórico</SelectItem>
@@ -496,7 +496,7 @@ export default function Admin() {
                   <SelectTrigger className="w-[180px] h-8 text-xs bg-background">
                     <SelectValue placeholder="Menu" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-card border-border text-foreground">
                     <SelectItem value="all">Todos os Menus</SelectItem>
                     {menus.map(m => (
                       <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
@@ -862,7 +862,7 @@ export default function Admin() {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o perfil" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-card border-border text-foreground">
                     <SelectItem value="sala">Sala</SelectItem>
                     <SelectItem value="cozinha">Cozinha</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>

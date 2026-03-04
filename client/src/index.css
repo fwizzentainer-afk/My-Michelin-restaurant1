@@ -85,3 +85,12 @@ select {
     transform: translateY(0);
   }
 }
+
+/* Global readability fix: force solid backgrounds where card/background are used with alpha classes */
+[class*="bg-card/"] {
+  background-color: hsl(var(--card)) !important;
+}
+
+[class*="bg-background/"] {
+  background-color: hsl(var(--background)) !important;
+}
