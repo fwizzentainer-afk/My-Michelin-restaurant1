@@ -2,19 +2,22 @@ import { useStore, Table } from "@/lib/store";
 import { CheckCircle2, Clock, AlertCircle, AlertTriangle, Utensils } from "lucide-react";
 import { useEffect, useState } from "react";
 
-type KitchenStatus = "preparing" | "ready" | "paused" | "idle";
+type KitchenStatus = "preparing" | "ready" | "paused" | "idle" | "finished";
 
 const statusConfig: Record<KitchenStatus, { label: string; dotColor: string; textColor: string }> = {
   preparing: { label: "Em Preparo", dotColor: "#d4a843", textColor: "rgba(212,168,67,0.85)" },
   ready: { label: "Pronto", dotColor: "#52c78d", textColor: "rgba(82,199,141,0.85)" },
   paused: { label: "Pausado", dotColor: "#c75252", textColor: "rgba(199,82,82,0.85)" },
+  finished: { label: "Finalizado", dotColor: "#7a1f2f", textColor: "rgba(205,146,160,0.9)" },
   idle: { label: "Aguardando", dotColor: "#555555", textColor: "rgba(255,255,255,0.25)" },
 };
 
 export default function Cozinha() {
   const { tables, menus, updateTable, triggerNotification } = useStore();
 
-  const activeTables = tables.filter((t) => t.menu && (t.currentMoment > 0 || t.momentsHistory.some((h) => h.momentNumber === -1)));
+  const activeTables = tables.filter(
+    (t) => t.status !== "finished" && t.menu && (t.currentMoment > 0 || t.momentsHistory.some((h) => h.momentNumber === -1)),
+  );
   const preparingTables = activeTables.filter((t) => t.status === "preparing");
   const readyTables = activeTables.filter((t) => t.status === "ready");
   const seatedTables = tables.filter(

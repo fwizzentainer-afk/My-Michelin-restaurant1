@@ -4,7 +4,7 @@ import socket from "@/socket";
 // Types
 export type Role = 'sala' | 'cozinha' | 'admin' | null;
 
-export type TableStatus = 'idle' | 'preparing' | 'ready' | 'paused';
+export type TableStatus = 'idle' | 'preparing' | 'ready' | 'paused' | 'finished';
 
 export interface MomentLog {
   momentNumber: number;
@@ -67,6 +67,7 @@ interface StoreState {
   historicalLogs: HistoricalService[];
   settings: {
     soundEnabled: boolean;
+    notificationsEnabled: boolean;
     requireRoleLogin: boolean;
   };
   connectionStatus: {
@@ -119,6 +120,7 @@ const TABLES_STORAGE_KEY = "michelin_tables_v1";
 const LOGS_STORAGE_KEY = "michelin_logs_v1";
 const defaultSettings: StoreState["settings"] = {
   soundEnabled: true,
+  notificationsEnabled: true,
   requireRoleLogin: true,
 };
 
@@ -239,19 +241,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       } else if (event.type === "NOTIFICATION") {
         const { targetRole, title, body } = event.payload;
         if (role === targetRole) {
-          if ("Notification" in window && Notification.permission === "granted") {
-            try {
-              new Notification(title, { 
-                body, 
-                icon: '/favicon.png',
-                tag: 'michelin-alert'
-              });
-            } catch (e) {
-              console.error("Error firing notification", e);
+          if (settings.notificationsEnabled) {
+            if ("Notification" in window && Notification.permission === "granted") {
+              try {
+                new Notification(title, { 
+                  body, 
+                  icon: '/favicon.png',
+                  tag: 'michelin-alert'
+                });
+              } catch (e) {
+                console.error("Error firing notification", e);
+              }
             }
-          }
-          if (settings.soundEnabled) {
-            playNotificationSound();
+            if (settings.soundEnabled) {
+              playNotificationSound();
+            }
           }
         }
       }
@@ -272,7 +276,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       channelRef.current = null;
       channel.close();
     };
-  }, [role, settings.soundEnabled]);
+  }, [role, settings.soundEnabled, settings.notificationsEnabled]);
 
   useEffect(() => {
     if (!role) return;
@@ -405,6 +409,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [historicalLogs]);
 
   const requestNotificationPermission = async () => {
+    if (!settings.notificationsEnabled) return;
     if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
       try {
         await Notification.requestPermission();
@@ -508,17 +513,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const triggerNotification = (targetRole: Role, title: string, body: string) => {
     publishSync("NOTIFICATION", { targetRole, title, body });
     if (role === targetRole) {
-      if ("Notification" in window && Notification.permission === "granted") {
-        try {
-          new Notification(title, { 
-            body, 
-            icon: '/favicon.png',
-            tag: 'michelin-alert'
-          });
-        } catch (e) {}
-      }
-      if (settings.soundEnabled) {
-        playNotificationSound();
+      if (settings.notificationsEnabled) {
+        if ("Notification" in window && Notification.permission === "granted") {
+          try {
+            new Notification(title, { 
+              body, 
+              icon: '/favicon.png',
+              tag: 'michelin-alert'
+            });
+          } catch (e) {}
+        }
+        if (settings.soundEnabled) {
+          playNotificationSound();
+        }
       }
     }
   };

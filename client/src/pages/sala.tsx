@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStore, Table } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check, Settings, Volume2, VolumeX, XCircle, Utensils, UserCheck, AlertTriangle, Languages, Users } from "lucide-react";
+import { Play, Pause, ChevronRight, CheckCircle2, Clock, ArrowLeft, Check, Settings, Volume2, VolumeX, Bell, BellOff, XCircle, Utensils, UserCheck, AlertTriangle, Languages, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { 
   Dialog, 
@@ -19,9 +19,41 @@ import { Textarea } from "@/components/ui/textarea";
 export default function Sala() {
   const { tables, menus, pairings, updateTable, finishService, triggerNotification, settings, updateSettings } = useStore();
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const [highlightPausedTables, setHighlightPausedTables] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem("michelin_sala_highlight_paused");
+      return raw ? raw === "true" : true;
+    } catch {
+      return true;
+    }
+  });
+  const [mapFilter, setMapFilter] = useState<"all" | "livre" | "sentada" | "servico" | "prepara" | "pausada" | "pronto" | "finalizado">(() => {
+    try {
+      const raw = localStorage.getItem("michelin_sala_map_filter");
+      if (!raw) return "all";
+      if (["all", "livre", "sentada", "servico", "prepara", "pausada", "pronto", "finalizado"].includes(raw)) {
+        return raw as "all" | "livre" | "sentada" | "servico" | "prepara" | "pausada" | "pronto" | "finalizado";
+      }
+      return "all";
+    } catch {
+      return "all";
+    }
+  });
 
   const selectedTable = tables.find(t => t.id === selectedTableId);
   const activeMenus = menus.filter(m => m.isActive);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("michelin_sala_highlight_paused", String(highlightPausedTables));
+    } catch {}
+  }, [highlightPausedTables]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("michelin_sala_map_filter", mapFilter);
+    } catch {}
+  }, [mapFilter]);
 
   const getStep = (table: Table) => {
     if (!table.menu) return "menu";
@@ -96,7 +128,11 @@ export default function Sala() {
 
     const actualSteps = selectedTable.totalMoments - 2;
     if (selectedTable.currentMoment >= actualSteps + 1) {
-      finishService(selectedTable.id);
+      updateTable(selectedTable.id, {
+        status: "finished",
+        lastMomentTime: now,
+        momentsHistory: updatedHistory,
+      });
       setSelectedTableId(null);
       return;
     }
@@ -172,6 +208,20 @@ export default function Sala() {
                 <div className="py-6 space-y-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
+                      {settings.notificationsEnabled ? <Bell className="w-5 h-5 text-primary" /> : <BellOff className="w-5 h-5 text-muted-foreground" />}
+                      <div className="space-y-0.5">
+                        <Label>Notificações</Label>
+                        <p className="text-xs text-muted-foreground">`false` desliga e `true` ativa notificações</p>
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={settings.notificationsEnabled} 
+                      onCheckedChange={(val) => updateSettings({ notificationsEnabled: val })} 
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
                       {settings.soundEnabled ? <Volume2 className="w-5 h-5 text-primary" /> : <VolumeX className="w-5 h-5 text-muted-foreground" />}
                       <div className="space-y-0.5">
                         <Label>Alerta Sonoro</Label>
@@ -183,6 +233,43 @@ export default function Sala() {
                       onCheckedChange={(val) => updateSettings({ soundEnabled: val })} 
                     />
                   </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Destaque Mesa Pausada</Label>
+                      <p className="text-xs text-muted-foreground">Realça mesa pausada em azul no mapa</p>
+                    </div>
+                    <Switch
+                      checked={highlightPausedTables}
+                      onCheckedChange={setHighlightPausedTables}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Filtro do Mapa</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { key: "all", label: "Todas" },
+                        { key: "livre", label: "Livre" },
+                        { key: "sentada", label: "Sentada" },
+                        { key: "servico", label: "Serviço" },
+                        { key: "prepara", label: "Prepara" },
+                        { key: "pausada", label: "Pausada" },
+                        { key: "pronto", label: "Pronto" },
+                        { key: "finalizado", label: "Finalizado" },
+                      ].map((option) => (
+                        <Button
+                          key={option.key}
+                          variant={mapFilter === option.key ? "default" : "outline"}
+                          size="sm"
+                          className="h-8"
+                          onClick={() => setMapFilter(option.key as "all" | "livre" | "sentada" | "servico" | "prepara" | "pausada" | "pronto" | "finalizado")}
+                        >
+                          {option.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
@@ -190,7 +277,7 @@ export default function Sala() {
           <div className="flex flex-wrap gap-2 sm:gap-3 text-[9px] sm:text-xs text-muted-foreground uppercase tracking-widest justify-end">
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-card border border-border" /> Livre</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-600 border border-red-500" /> Sentada</div>
-            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary/10 border border-primary/50" /> Em Serviço</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#7a1f2f]/25 border border-[#7a1f2f]" /> Finalizado</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500/20 border border-amber-500" /> Prepara</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500/20 border border-blue-500" /> Mesa pausada</div>
             <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500" /> Pronto</div>
@@ -210,6 +297,25 @@ export default function Sala() {
             const isPreparing = table.status === 'preparing';
             const isReady = table.status === 'ready';
             const isPaused = table.status === 'paused';
+            const isFinished = table.status === "finished";
+            const tableCategory: "livre" | "sentada" | "servico" | "prepara" | "pausada" | "pronto" | "finalizado" =
+              !table.menu
+                ? "livre"
+                : isPreparing
+                ? "prepara"
+                : isReady
+                ? "pronto"
+                : isFinished
+                ? "finalizado"
+                : isPaused
+                ? "pausada"
+                : isSeated
+                ? "sentada"
+                : "servico";
+
+            if (mapFilter !== "all" && tableCategory !== mapFilter) {
+              return null;
+            }
 
             let shapeClass = "flex items-center justify-center cursor-pointer transition-all duration-300 shadow-xl border-2 hover:scale-105 active:scale-95 absolute z-20";
             let colorClass = "border-border/30 bg-[#25262b] text-foreground hover:border-primary/40";
@@ -218,8 +324,10 @@ export default function Sala() {
               colorClass = "border-amber-500 bg-amber-500/10 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]";
             } else if (isReady) {
               colorClass = "border-emerald-500 bg-emerald-500/20 text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]";
-            } else if (isPaused) {
+            } else if (isPaused && highlightPausedTables) {
               colorClass = "border-blue-500 bg-blue-500/20 text-blue-300 shadow-[0_0_20px_rgba(59,130,246,0.35)]";
+            } else if (isFinished) {
+              colorClass = "border-[#7a1f2f] bg-[#7a1f2f]/25 text-[#e7b8c3] shadow-[0_0_20px_rgba(122,31,47,0.35)]";
             } else if (hasActiveService) {
               colorClass = "border-primary/60 bg-primary/10 text-primary shadow-[0_0_15px_rgba(212,175,55,0.15)]";
             } else if (isSeated) {
@@ -262,10 +370,10 @@ export default function Sala() {
                   data-testid={`map-table-${table.number}`}
                 >
                   <span className="text-lg sm:text-xl font-light tracking-[2px]">{table.number}</span>
-                  {(hasActiveService || isSeated) && !isPreparing && !isReady && !isPaused && (
+                  {(hasActiveService || isSeated) && !isPreparing && !isReady && !isPaused && !isFinished && (
                     <span className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#1a1b1e] ${isSeated ? 'bg-red-500' : 'bg-primary'}`} />
                   )}
-                  {isPaused && (
+                  {isPaused && highlightPausedTables && (
                     <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-500 rounded-full border-2 border-[#1a1b1e] shadow-[0_0_8px_#3b82f6]" />
                   )}
                   {isPreparing && (
@@ -273,6 +381,9 @@ export default function Sala() {
                   )}
                   {isReady && (
                     <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[#1a1b1e] shadow-[0_0_8px_#10b981]" />
+                  )}
+                  {isFinished && (
+                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#7a1f2f] rounded-full border-2 border-[#1a1b1e] shadow-[0_0_8px_#7a1f2f]" />
                   )}
                   {table.restrictions.type && (
                     <span className="absolute -bottom-1 -left-1 w-3.5 h-3.5 bg-destructive rounded-full border-2 border-[#1a1b1e] flex items-center justify-center">
@@ -498,11 +609,13 @@ export default function Sala() {
                 <Badge variant={
                   selectedTable.status === 'ready' ? 'default' : 
                   selectedTable.status === 'preparing' ? 'outline' : 
-                  selectedTable.status === 'paused' ? 'destructive' : 'secondary'
+                  selectedTable.status === 'paused' ? 'destructive' :
+                  selectedTable.status === 'finished' ? 'secondary' : 'secondary'
                 } className="uppercase px-3 py-1 text-[10px]">
                   {selectedTable.status === 'ready' ? 'Pronto na Cozinha' : 
                    selectedTable.status === 'preparing' ? 'Preparando' : 
-                   selectedTable.status === 'paused' ? 'Pausado' : 'Aguardando'}
+                   selectedTable.status === 'paused' ? 'Pausado' :
+                   selectedTable.status === 'finished' ? 'Finalizado' : 'Aguardando'}
                 </Badge>
               </div>
             </CardHeader>
@@ -513,6 +626,9 @@ export default function Sala() {
                 )}
                 {selectedTable.status === 'ready' && (
                   <div className="absolute inset-0 bg-emerald-500/5" />
+                )}
+                {selectedTable.status === 'finished' && (
+                  <div className="absolute inset-0 bg-[#7a1f2f]/10" />
                 )}
                 
                 <span className="text-xs uppercase tracking-widest text-muted-foreground mb-3 relative z-10">Momento Atual</span>
@@ -541,6 +657,12 @@ export default function Sala() {
                       Pronto para retirar
                     </div>
                   )}
+                  {selectedTable.status === 'finished' && (
+                    <div className="flex items-center text-[#e7b8c3] text-sm font-medium mt-2 bg-[#7a1f2f]/20 px-4 py-1.5 rounded-full border border-[#7a1f2f]/40">
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      Serviço finalizado
+                    </div>
+                  )}
                   {selectedTable.currentMoment === 0 && (
                     <div className="text-muted-foreground text-sm font-medium mt-2">
                       Aguardando início
@@ -554,6 +676,7 @@ export default function Sala() {
                 variant="outline" 
                 size="lg" 
                 className={`w-16 h-14 border-border/40 transition-colors ${selectedTable.status === 'paused' ? 'bg-destructive/20 text-destructive border-destructive/50' : 'hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30'}`}
+                disabled={selectedTable.status === "finished"}
                 onClick={handlePause}
                 data-testid="button-pause"
               >
@@ -572,7 +695,7 @@ export default function Sala() {
               ) : (
                 <Button 
                   className="flex-1 h-14 bg-primary text-primary-foreground hover:bg-primary/90 text-lg tracking-wide shadow-[0_0_20px_rgba(var(--primary),0.2)] disabled:opacity-50 disabled:shadow-none transition-all"
-                  disabled={selectedTable.status === 'preparing' || selectedTable.status === 'paused'}
+                  disabled={selectedTable.status === 'preparing' || selectedTable.status === 'paused' || selectedTable.status === 'finished'}
                   onClick={handleNextMoment}
                   data-testid="button-next-moment"
                 >
