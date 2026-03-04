@@ -186,6 +186,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const syncQueueRef = useRef<SyncEnvelope[]>([]);
   const syncSourceIdRef = useRef<string>(crypto.randomUUID());
   const channelRef = useRef<BroadcastChannel | null>(null);
+  const serverSyncEnabledRef = useRef(true);
+
+  const syncServerState = async (patch: Partial<{ tables: Table[]; menus: Menu[]; historicalLogs: HistoricalService[] }>) => {
+    if (!role || !serverSyncEnabledRef.current) return;
+    try {
+      const res = await fetch("/api/state", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      if (res.status === 401 || res.status === 403) {
+        serverSyncEnabledRef.current = false;
+      }
+    } catch (err) {
+      console.warn("Falha ao sincronizar estado compartilhado:", err);
+    }
+  };
 
   const playNotificationSound = () => {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -255,6 +273,42 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       channel.close();
     };
   }, [role, settings.soundEnabled]);
+
+  useEffect(() => {
+    if (!role) return;
+    let cancelled = false;
+    serverSyncEnabledRef.current = true;
+
+    const loadFromServer = async () => {
+      try {
+        const res = await fetch("/api/state", {
+          credentials: "include",
+        });
+        if (res.status === 401 || res.status === 403) {
+          serverSyncEnabledRef.current = false;
+          return;
+        }
+        if (!res.ok) return;
+        const payload = await res.json() as Partial<{
+          tables: Table[];
+          menus: Menu[];
+          historicalLogs: HistoricalService[];
+        }>;
+
+        if (cancelled) return;
+        if (Array.isArray(payload.tables) && payload.tables.length > 0) setTables(payload.tables);
+        if (Array.isArray(payload.menus) && payload.menus.length > 0) setMenus(payload.menus);
+        if (Array.isArray(payload.historicalLogs)) setHistoricalLogs(payload.historicalLogs);
+      } catch (err) {
+        console.warn("Falha ao carregar estado do servidor:", err);
+      }
+    };
+
+    void loadFromServer();
+    return () => {
+      cancelled = true;
+    };
+  }, [role]);
 
   const flushQueuedSync = () => {
     if (!online || !socketConnected) return;
@@ -373,6 +427,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setTables(prev => {
       const next = prev.map(t => t.id === id ? { ...t, ...updates } : t);
       publishSync("SYNC_TABLES", next);
+      void syncServerState({ tables: next });
       return next;
     });
   };
@@ -393,6 +448,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 momentsHistory: t.momentsHistory
               }];
               publishSync("SYNC_LOGS", nextLogs);
+              void syncServerState({ historicalLogs: nextLogs });
               return nextLogs;
             });
           }
@@ -414,6 +470,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return t;
       });
       publishSync("SYNC_TABLES", nextTables);
+      void syncServerState({ tables: nextTables });
       return nextTables;
     });
   };
@@ -422,6 +479,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setMenus(prev => {
       const next = [...prev, { ...menu, id: `m${Date.now()}` }];
       publishSync("SYNC_MENUS", next);
+      void syncServerState({ menus: next });
       return next;
     });
   };
@@ -430,6 +488,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setMenus(prev => {
       const next = prev.map(m => m.id === id ? { ...m, ...updates } : m);
       publishSync("SYNC_MENUS", next);
+      void syncServerState({ menus: next });
       return next;
     });
   };
@@ -440,6 +499,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (menu?.isActive) return prev;
       const next = prev.filter(m => m.id !== id);
       publishSync("SYNC_MENUS", next);
+      void syncServerState({ menus: next });
       return next;
     });
   };

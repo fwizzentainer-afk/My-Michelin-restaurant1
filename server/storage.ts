@@ -11,6 +11,7 @@ import {
   menus,
   tables,
   historicalServices,
+  appState,
   insertUserSchema,
   type User,
   type InsertUser,
@@ -38,10 +39,26 @@ export interface IStorage {
 
   logHistorical(entry: InsertHistoricalService): Promise<HistoricalService>;
   listHistorical(): Promise<HistoricalService[]>;
+
+  getSharedState(): Promise<SharedState>;
+  updateSharedState(patch: Partial<SharedState>): Promise<SharedState>;
 }
 
 const SALT_ROUNDS = 10;
 const LOGIN_USERS_FILE = path.resolve(process.cwd(), ".node", "login-users.json");
+const SHARED_STATE_FILE = path.resolve(process.cwd(), ".node", "shared-state.json");
+
+export interface SharedState {
+  tables: any[];
+  menus: any[];
+  historicalLogs: any[];
+}
+
+const defaultSharedState: SharedState = {
+  tables: [],
+  menus: [],
+  historicalLogs: [],
+};
 
 function loadLocalUsers(): User[] {
   try {
@@ -65,11 +82,37 @@ function saveLocalUsers(usersList: User[]) {
   }
 }
 
+function loadSharedState(): SharedState {
+  try {
+    if (!fs.existsSync(SHARED_STATE_FILE)) return { ...defaultSharedState };
+    const raw = fs.readFileSync(SHARED_STATE_FILE, "utf-8");
+    const parsed = JSON.parse(raw) as Partial<SharedState>;
+    return {
+      tables: Array.isArray(parsed.tables) ? parsed.tables : [],
+      menus: Array.isArray(parsed.menus) ? parsed.menus : [],
+      historicalLogs: Array.isArray(parsed.historicalLogs) ? parsed.historicalLogs : [],
+    };
+  } catch (err) {
+    console.warn("Falha ao carregar estado compartilhado:", err);
+    return { ...defaultSharedState };
+  }
+}
+
+function saveSharedState(state: SharedState) {
+  try {
+    fs.mkdirSync(path.dirname(SHARED_STATE_FILE), { recursive: true });
+    fs.writeFileSync(SHARED_STATE_FILE, JSON.stringify(state, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("Falha ao salvar estado compartilhado:", err);
+  }
+}
+
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private menus: Map<string, Menu>;
   private tables: Map<string, Table>;
   private historical: HistoricalService[];
+  private sharedState: SharedState;
 
   constructor() {
     const bootUsers = loadLocalUsers();
@@ -77,6 +120,7 @@ export class MemStorage implements IStorage {
     this.menus = new Map();
     this.tables = new Map();
     this.historical = [];
+    this.sharedState = loadSharedState();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -160,14 +204,29 @@ export class MemStorage implements IStorage {
   async listHistorical(): Promise<HistoricalService[]> {
     return this.historical;
   }
+
+  async getSharedState(): Promise<SharedState> {
+    return this.sharedState;
+  }
+
+  async updateSharedState(patch: Partial<SharedState>): Promise<SharedState> {
+    this.sharedState = {
+      tables: Array.isArray(patch.tables) ? patch.tables : this.sharedState.tables,
+      menus: Array.isArray(patch.menus) ? patch.menus : this.sharedState.menus,
+      historicalLogs: Array.isArray(patch.historicalLogs)
+        ? patch.historicalLogs
+        : this.sharedState.historicalLogs,
+    };
+    saveSharedState(this.sharedState);
+    return this.sharedState;
+  }
 }
 
 export class PostgresStorage implements IStorage {
-  private pool: Pool;
   private db;
+  private readonly stateKey = "global";
 
   constructor(pool: Pool) {
-    this.pool = pool;
     this.db = drizzle(pool, { schema });
   }
 
@@ -258,6 +317,89 @@ export class PostgresStorage implements IStorage {
 
   async listHistorical(): Promise<HistoricalService[]> {
     return this.db.select().from(historicalServices);
+  }
+
+  async getSharedState(): Promise<SharedState> {
+    try {
+      const row = await this.db.query.appState.findFirst({
+        where: eq(appState.key, this.stateKey),
+      });
+
+      if (!row) {
+        const [created] = await this.db
+          .insert(appState)
+          .values({
+            key: this.stateKey,
+            tables: defaultSharedState.tables,
+            menus: defaultSharedState.menus,
+            historicalLogs: defaultSharedState.historicalLogs,
+            updatedAt: new Date(),
+          })
+          .returning();
+        return {
+          tables: created.tables ?? [],
+          menus: created.menus ?? [],
+          historicalLogs: created.historicalLogs ?? [],
+        };
+      }
+
+      return {
+        tables: row.tables ?? [],
+        menus: row.menus ?? [],
+        historicalLogs: row.historicalLogs ?? [],
+      };
+    } catch (err: any) {
+      if (err?.code === "42P01") {
+        // app_state table not migrated yet; keep app operational with file fallback.
+        return loadSharedState();
+      }
+      throw err;
+    }
+  }
+
+  async updateSharedState(patch: Partial<SharedState>): Promise<SharedState> {
+    const current = await this.getSharedState();
+    const next: SharedState = {
+      tables: Array.isArray(patch.tables) ? patch.tables : current.tables,
+      menus: Array.isArray(patch.menus) ? patch.menus : current.menus,
+      historicalLogs: Array.isArray(patch.historicalLogs)
+        ? patch.historicalLogs
+        : current.historicalLogs,
+    };
+
+    try {
+      const [row] = await this.db
+        .insert(appState)
+        .values({
+          key: this.stateKey,
+          tables: next.tables,
+          menus: next.menus,
+          historicalLogs: next.historicalLogs,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: appState.key,
+          set: {
+            tables: next.tables,
+            menus: next.menus,
+            historicalLogs: next.historicalLogs,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      return {
+        tables: row.tables ?? [],
+        menus: row.menus ?? [],
+        historicalLogs: row.historicalLogs ?? [],
+      };
+    } catch (err: any) {
+      if (err?.code === "42P01") {
+        saveSharedState(next);
+        return next;
+      }
+      throw err;
+    }
   }
 }
 

@@ -145,6 +145,41 @@ export async function registerRoutes(
     res.json(table);
   });
 
+  // Shared app state (server source of truth for client state sync)
+  router.get("/state", requireAuth, async (_req, res) => {
+    const state = await storage.getSharedState();
+    res.json(state);
+  });
+
+  router.put("/state", requireAuth, async (req, res) => {
+    const body = req.body ?? {};
+    if (
+      body.tables !== undefined &&
+      !Array.isArray(body.tables)
+    ) {
+      return res.status(400).json({ error: "Campo tables inválido" });
+    }
+    if (
+      body.menus !== undefined &&
+      !Array.isArray(body.menus)
+    ) {
+      return res.status(400).json({ error: "Campo menus inválido" });
+    }
+    if (
+      body.historicalLogs !== undefined &&
+      !Array.isArray(body.historicalLogs)
+    ) {
+      return res.status(400).json({ error: "Campo historicalLogs inválido" });
+    }
+
+    const next = await storage.updateSharedState({
+      tables: body.tables,
+      menus: body.menus,
+      historicalLogs: body.historicalLogs,
+    });
+    res.json(next);
+  });
+
   app.use("/api", router);
 
   // API 404 handler

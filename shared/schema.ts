@@ -72,6 +72,14 @@ export const historicalServices = pgTable("historical_services", {
   >(),
 });
 
+export const appState = pgTable("app_state", {
+  key: text("key").primaryKey(),
+  tables: jsonb("tables").$type<any[]>().notNull().default(sql`'[]'::jsonb`),
+  menus: jsonb("menus").$type<any[]>().notNull().default(sql`'[]'::jsonb`),
+  historicalLogs: jsonb("historical_logs").$type<any[]>().notNull().default(sql`'[]'::jsonb`),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const insertMenuSchema = createInsertSchema(menus).pick({
   name: true,
   moments: true,
