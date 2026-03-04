@@ -118,6 +118,7 @@ const SETTINGS_STORAGE_KEY = "michelin_settings_v1";
 const MENUS_STORAGE_KEY = "michelin_menus_v1";
 const TABLES_STORAGE_KEY = "michelin_tables_v1";
 const LOGS_STORAGE_KEY = "michelin_logs_v1";
+const MENUS_PENDING_SYNC_STORAGE_KEY = "michelin_menus_pending_sync_v1";
 const defaultSettings: StoreState["settings"] = {
   soundEnabled: true,
   notificationsEnabled: true,
@@ -189,9 +190,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const syncSourceIdRef = useRef<string>(crypto.randomUUID());
   const channelRef = useRef<BroadcastChannel | null>(null);
   const serverSyncEnabledRef = useRef(true);
+  const menusPendingSyncRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    try {
+      menusPendingSyncRef.current = localStorage.getItem(MENUS_PENDING_SYNC_STORAGE_KEY) === "true";
+    } catch {
+      menusPendingSyncRef.current = false;
+    }
+  }, []);
+
+  const setMenusPendingSync = (pending: boolean) => {
+    menusPendingSyncRef.current = pending;
+    try {
+      localStorage.setItem(MENUS_PENDING_SYNC_STORAGE_KEY, String(pending));
+    } catch (err) {
+      console.warn("Falha ao persistir estado pendente de menus:", err);
+    }
+  };
 
   const syncServerState = async (patch: Partial<{ tables: Table[]; menus: Menu[]; historicalLogs: HistoricalService[] }>) => {
-    if (!role || !serverSyncEnabledRef.current) return;
+    if (!role || !serverSyncEnabledRef.current) return false;
     try {
       const res = await fetch("/api/state", {
         method: "PUT",
@@ -201,9 +220,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       });
       if (res.status === 401 || res.status === 403) {
         serverSyncEnabledRef.current = false;
+        return false;
       }
+      return res.ok;
     } catch (err) {
       console.warn("Falha ao sincronizar estado compartilhado:", err);
+      return false;
     }
   };
 
@@ -301,7 +323,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
         if (cancelled) return;
         if (Array.isArray(payload.tables) && payload.tables.length > 0) setTables(payload.tables);
-        if (Array.isArray(payload.menus) && payload.menus.length > 0) setMenus(payload.menus);
+        if (Array.isArray(payload.menus) && payload.menus.length > 0) {
+          setMenus((prevMenus) => {
+            const localMenusJson = JSON.stringify(prevMenus);
+            const serverMenusJson = JSON.stringify(payload.menus);
+
+            if (localMenusJson === serverMenusJson) {
+              if (menusPendingSyncRef.current) setMenusPendingSync(false);
+              return payload.menus as Menu[];
+            }
+
+            if (menusPendingSyncRef.current && prevMenus.length > 0) {
+              void syncServerState({ menus: prevMenus }).then((ok) => {
+                if (ok) setMenusPendingSync(false);
+              });
+              return prevMenus;
+            }
+
+            return payload.menus as Menu[];
+          });
+        }
         if (Array.isArray(payload.historicalLogs)) setHistoricalLogs(payload.historicalLogs);
       } catch (err) {
         console.warn("Falha ao carregar estado do servidor:", err);
@@ -481,30 +522,42 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const createMenu = (menu: Omit<Menu, 'id'>) => {
+    if (role !== "admin") return;
     setMenus(prev => {
       const next = [...prev, { ...menu, id: `m${Date.now()}` }];
+      setMenusPendingSync(true);
       publishSync("SYNC_MENUS", next);
-      void syncServerState({ menus: next });
+      void syncServerState({ menus: next }).then((ok) => {
+        if (ok) setMenusPendingSync(false);
+      });
       return next;
     });
   };
 
   const updateMenu = (id: string, updates: Partial<Menu>) => {
+    if (role !== "admin") return;
     setMenus(prev => {
       const next = prev.map(m => m.id === id ? { ...m, ...updates } : m);
+      setMenusPendingSync(true);
       publishSync("SYNC_MENUS", next);
-      void syncServerState({ menus: next });
+      void syncServerState({ menus: next }).then((ok) => {
+        if (ok) setMenusPendingSync(false);
+      });
       return next;
     });
   };
 
   const deleteMenu = (id: string) => {
+    if (role !== "admin") return;
     setMenus(prev => {
       const menu = prev.find(m => m.id === id);
       if (menu?.isActive) return prev;
       const next = prev.filter(m => m.id !== id);
+      setMenusPendingSync(true);
       publishSync("SYNC_MENUS", next);
-      void syncServerState({ menus: next });
+      void syncServerState({ menus: next }).then((ok) => {
+        if (ok) setMenusPendingSync(false);
+      });
       return next;
     });
   };

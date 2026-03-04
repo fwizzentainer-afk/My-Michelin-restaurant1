@@ -694,7 +694,7 @@ export default function Sala() {
               ) : (
                 <Button 
                   className="flex-1 h-14 bg-primary text-primary-foreground hover:bg-primary/90 text-lg tracking-wide shadow-[0_0_20px_rgba(var(--primary),0.2)] disabled:opacity-50 disabled:shadow-none transition-all"
-                  disabled={selectedTable.status === 'preparing' || selectedTable.status === 'paused' || selectedTable.status === 'finished'}
+                  disabled={selectedTable.status === 'preparing' || selectedTable.status === 'paused'}
                   onClick={handleNextMoment}
                   data-testid="button-next-moment"
                 >
