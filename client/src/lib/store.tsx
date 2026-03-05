@@ -167,7 +167,9 @@ const normalizeMenu = (
     ? parseLegacyGroupingRules(menu.customGroupingRules)
     : [];
   const customGroupingRanges = normalizeRanges(rawRanges);
-  const maxRangeEnd = customGroupingRanges.reduce((max, r) => Math.max(max, r.end), 0);
+  const maxRangeEnd = (menu.customGroupingEnabled ?? false)
+    ? customGroupingRanges.reduce((max, r) => Math.max(max, r.end), 0)
+    : 0;
   const minimumDisplayTotal = Math.max(menu.moments.length, maxRangeEnd);
   const displayTotalMoments =
     typeof menu.displayTotalMoments === "number" && Number.isFinite(menu.displayTotalMoments)

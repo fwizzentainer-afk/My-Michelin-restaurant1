@@ -235,6 +235,12 @@ export default function Admin() {
       return;
     }
 
+    const validatedNewRanges = validateGroupingRanges(newCustomGroupingRanges, newMoments.length);
+    if (!validatedNewRanges.ok) {
+      toast({ title: "Erro", description: validatedNewRanges.message, variant: "destructive" });
+      return;
+    }
+
     if (newDisplayTotalMoments < newMinimumDisplayTotal) {
       toast({
         title: "Erro",
@@ -250,7 +256,7 @@ export default function Admin() {
       isActive: false,
       displayTotalMoments: newDisplayTotalMoments,
       customGroupingEnabled: newCustomGroupingEnabled,
-      customGroupingRanges: newCustomGroupingRanges,
+      customGroupingRanges: validatedNewRanges.normalized,
     });
     setNewMenuName("");
     setNewMoments([""]);
@@ -333,10 +339,43 @@ export default function Admin() {
     setEditingCustomGroupingRanges((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const validateGroupingRanges = (ranges: Array<{ start: number; end: number }>, maxStep: number) => {
+    const normalized = ranges
+      .map((r) => ({ start: Math.floor(r.start), end: Math.floor(r.end) }))
+      .filter((r) => Number.isFinite(r.start) && Number.isFinite(r.end))
+      .sort((a, b) => a.start - b.start);
+
+    for (const range of normalized) {
+      if (range.start < 1 || range.end < range.start) {
+        return { ok: false as const, message: "Cada grupo precisa ter start >= 1 e end >= start." };
+      }
+      if (range.end > maxStep) {
+        return { ok: false as const, message: `Grupo fora do limite: end não pode passar de ${maxStep}.` };
+      }
+    }
+
+    for (let i = 1; i < normalized.length; i++) {
+      if (normalized[i].start <= normalized[i - 1].end) {
+        return { ok: false as const, message: "Grupos não podem se sobrepor." };
+      }
+    }
+
+    return { ok: true as const, normalized };
+  };
+
   const saveEditingMenu = (menu: Menu) => {
     const cleaned = editingMoments.map((m) => m.trim()).filter(Boolean);
+    const validatedEditingRanges = validateGroupingRanges(editingCustomGroupingRanges, cleaned.length);
+    if (!validatedEditingRanges.ok) {
+      toast({
+        title: "Menu inválido",
+        description: validatedEditingRanges.message,
+        variant: "destructive",
+      });
+      return;
+    }
     const editingMaxRange = editingCustomGroupingEnabled
-      ? editingCustomGroupingRanges.reduce((max, r) => Math.max(max, r.end || 0), 0)
+      ? validatedEditingRanges.normalized.reduce((max, r) => Math.max(max, r.end || 0), 0)
       : 0;
     const editingMinimumDisplayTotal = Math.max(cleaned.length, editingMaxRange);
     if (!cleaned.length) {
@@ -361,7 +400,7 @@ export default function Admin() {
       moments: cleaned,
       displayTotalMoments: editingDisplayTotalMoments,
       customGroupingEnabled: editingCustomGroupingEnabled,
-      customGroupingRanges: editingCustomGroupingRanges,
+      customGroupingRanges: validatedEditingRanges.normalized,
     });
     toast({ title: "Menu atualizado", description: `${menu.name} foi atualizado com sucesso.` });
     cancelEditingMenu();

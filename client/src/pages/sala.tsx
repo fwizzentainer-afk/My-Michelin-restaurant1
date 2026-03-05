@@ -53,6 +53,15 @@ export default function Sala() {
     return Array.from({ length: end - start + 1 }, (_, i) => start + i).join("&");
   };
 
+  const getRangeStartingAt = (menuConfig: Menu | undefined, step: number, total: number) => {
+    if (!menuConfig?.customGroupingEnabled || !Array.isArray(menuConfig.customGroupingRanges)) return null;
+    return (
+      menuConfig.customGroupingRanges.find(
+        (r) => r.start === step && r.start > 0 && r.end >= r.start && r.start <= total,
+      ) ?? null
+    );
+  };
+
   const getCustomMomentLabel = (menuConfig: Menu | undefined, step: number) => {
     if (!menuConfig?.customGroupingEnabled || !Array.isArray(menuConfig.customGroupingRanges)) return null;
     const match = menuConfig.customGroupingRanges.find((r) => step >= r.start && step <= r.end);
@@ -137,7 +146,15 @@ export default function Sala() {
     if (!selectedTable) return;
     
     const now = Date.now();
-    const nextMoment = selectedTable.currentMoment + 1;
+    const menuInfo = menus.find(m => m.name === selectedTable.menu);
+    const totalSteps = selectedTable.totalMoments;
+    const currentRange = getRangeStartingAt(menuInfo, selectedTable.currentMoment, totalSteps);
+    const nextMoment =
+      selectedTable.currentMoment === 0
+        ? 1
+        : currentRange
+        ? Math.min(totalSteps + 1, currentRange.end + 1)
+        : selectedTable.currentMoment + 1;
     let updatedHistory = [...selectedTable.momentsHistory];
     
     if (selectedTable.currentMoment > 0) {
@@ -147,7 +164,7 @@ export default function Sala() {
       }
     }
 
-    if (selectedTable.currentMoment >= selectedTable.totalMoments) {
+    if (selectedTable.currentMoment >= totalSteps || nextMoment > totalSteps) {
       updateTable(selectedTable.id, {
         status: "finished",
         lastMomentTime: now,
@@ -156,8 +173,12 @@ export default function Sala() {
       return;
     }
 
-    const menuInfo = menus.find(m => m.name === selectedTable.menu);
-    const momentName = menuInfo ? menuInfo.moments[nextMoment - 1] : `Momento ${nextMoment}`;
+    const nextRange = getRangeStartingAt(menuInfo, nextMoment, totalSteps);
+    const momentName = nextRange
+      ? Array.from({ length: nextRange.end - nextRange.start + 1 }, (_, i) => nextRange.start + i)
+          .map((step) => menuInfo?.moments[step - 1] || `Momento ${step}`)
+          .join(" · ")
+      : menuInfo?.moments[nextMoment - 1] || `Momento ${nextMoment}`;
 
     updatedHistory.push({
       momentNumber: nextMoment,
