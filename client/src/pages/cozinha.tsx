@@ -285,29 +285,26 @@ function CozinhaTableCard({
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
 
-  const getCustomMomentLabel = (step: number, total: number, displayTotal: number) => {
-    if (!menuConfig?.customGroupingEnabled || !menuConfig.customGroupingRules) return null;
-    if ((displayTotal === 9 || displayTotal === 11) && (step === 1 || step === total - 1)) return null;
-    const rules = menuConfig.customGroupingRules
-      .split(";")
-      .map((r) => r.trim())
-      .filter(Boolean);
-    for (const rule of rules) {
-      const [left, right] = rule.split("=").map((v) => v?.trim());
-      const stepNum = Number(left);
-      if (!Number.isFinite(stepNum) || !right) continue;
-      if (stepNum === step) return right.replace(/^M/i, "");
-    }
-    return null;
+  const buildRangeLabel = (start: number, end: number) => {
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i).join("&");
+  };
+
+  const getRangeStartingAt = (step: number) => {
+    if (!menuConfig?.customGroupingEnabled || !Array.isArray(menuConfig.customGroupingRanges)) return null;
+    return menuConfig.customGroupingRanges.find((r) => r.start === step) ?? null;
+  };
+
+  const getRangeForStep = (step: number) => {
+    if (!menuConfig?.customGroupingEnabled || !Array.isArray(menuConfig.customGroupingRanges)) return null;
+    return menuConfig.customGroupingRanges.find((r) => step >= r.start && step <= r.end) ?? null;
   };
 
   const getMomentDisplay = (moment: number, total: number, displayTotal: number) => {
     if (moment === 0) return "0";
-    const custom = getCustomMomentLabel(moment, total, displayTotal);
-    if (custom) return custom.replace(/&/g, " & ");
-    if (moment === 1) return "1 & 2";
-    if (moment === total - 1) return `${displayTotal - 1} & ${displayTotal}`;
-    return String(moment + 1);
+    const customRange = getRangeForStep(moment);
+    if (customRange) return buildRangeLabel(customRange.start, customRange.end).replace(/&/g, " & ");
+    if (moment > displayTotal) return String(displayTotal);
+    return String(moment);
   };
 
   const currentMomentName = table.currentMoment > 0 ? menuMoments[table.currentMoment - 1] : null;
@@ -318,11 +315,10 @@ function CozinhaTableCard({
   const totalSteps = Math.max(table.totalMoments || 0, menuMoments.length || 0);
 
   const formatMomentLabel = (moment: number, total: number, displayTotal: number) => {
-    const custom = getCustomMomentLabel(moment, total, displayTotal);
-    if (custom) return `M${custom}`;
-    if (moment === 1) return "M1&2";
-    if (moment === total - 1) return `M${displayTotal - 1}&${displayTotal}`;
-    return `M${moment + 1}`;
+    const customRange = getRangeForStep(moment);
+    if (customRange) return `M${buildRangeLabel(customRange.start, customRange.end)}`;
+    if (moment > displayTotal) return `M${displayTotal}`;
+    return `M${moment}`;
   };
 
   const formatLocalHour = (ts: number | null) => {
@@ -711,38 +707,61 @@ function CozinhaTableCard({
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {Array.from({ length: totalSteps }).map((_, idx) => {
-                  const momentNumber = idx + 1;
-                  const log = table.momentsHistory.find((h) => h.momentNumber === momentNumber);
-                  const done = Boolean(log?.readyTime);
-                  const isCurrent = table.currentMoment === momentNumber && table.status === "preparing";
-                  const momentName = menuMoments[idx] || log?.momentName || `Momento ${momentNumber}`;
-                  return (
-                    <div key={`${table.id}-ticket-step-${momentNumber}`} style={{ padding: "8px 0 10px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            color: done ? "rgba(185,255,217,0.95)" : "rgba(255,255,255,0.9)",
-                            fontSize: 15,
-                            textDecoration: done ? "line-through" : "none",
-                            opacity: done ? 0.8 : 1,
-                          }}
-                        >
-                          <span style={{ width: 18, textAlign: "center" }}>{done ? "✓" : "☐"}</span>
-                          <span>
-                            {formatMomentLabel(momentNumber, totalSteps, displayTotalMoments)} - {momentName}
+                {(() => {
+                  const rows: JSX.Element[] = [];
+                  let momentNumber = 1;
+                  while (momentNumber <= totalSteps) {
+                    const range = getRangeStartingAt(momentNumber);
+                    const rangeStart = range?.start ?? momentNumber;
+                    const rangeEnd = Math.min(range?.end ?? momentNumber, totalSteps);
+                    const numbers = Array.from({ length: rangeEnd - rangeStart + 1 }, (_, i) => rangeStart + i);
+                    const logsInRange = numbers
+                      .map((n) => table.momentsHistory.find((h) => h.momentNumber === n))
+                      .filter(Boolean);
+                    const done = numbers.every((n) => {
+                      const log = table.momentsHistory.find((h) => h.momentNumber === n);
+                      return Boolean(log?.readyTime);
+                    });
+                    const currentInRange = numbers.includes(table.currentMoment) && table.status === "preparing";
+                    const latestReadyTime = logsInRange
+                      .map((l) => l?.readyTime ?? 0)
+                      .reduce((max, value) => (value > max ? value : max), 0);
+                    const momentName = range
+                      ? numbers.map((n) => menuMoments[n - 1] || `Momento ${n}`).join(" · ")
+                      : menuMoments[momentNumber - 1] || `Momento ${momentNumber}`;
+                    rows.push(
+                      <div key={`${table.id}-ticket-step-${rangeStart}-${rangeEnd}`} style={{ padding: "8px 0 10px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              color: done ? "rgba(185,255,217,0.95)" : "rgba(255,255,255,0.9)",
+                              fontSize: 15,
+                              textDecoration: done ? "line-through" : "none",
+                              opacity: done ? 0.8 : 1,
+                            }}
+                          >
+                            <span style={{ width: 18, textAlign: "center" }}>{done ? "✓" : "☐"}</span>
+                            <span>
+                              {range ? `M${buildRangeLabel(rangeStart, rangeEnd)}` : formatMomentLabel(momentNumber, totalSteps, displayTotalMoments)} - {momentName}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: 14, color: done ? "rgba(82,199,141,0.95)" : "rgba(255,255,255,0.45)", minWidth: 50, textAlign: "right" }}>
+                            {done
+                              ? formatLocalHour(latestReadyTime || null)
+                              : currentInRange
+                              ? "Em preparo"
+                              : "Aguardando"}
                           </span>
                         </div>
-                        <span style={{ fontSize: 14, color: done ? "rgba(82,199,141,0.95)" : "rgba(255,255,255,0.45)", minWidth: 50, textAlign: "right" }}>
-                          {done ? formatLocalHour(log?.readyTime ?? null) : isCurrent ? "Em preparo" : "Aguardando"}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+                      </div>,
+                    );
+                    momentNumber = range ? rangeEnd + 1 : momentNumber + 1;
+                  }
+                  return rows;
+                })()}
               </div>
             </div>
           </div>

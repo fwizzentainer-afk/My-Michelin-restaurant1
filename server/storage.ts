@@ -350,8 +350,7 @@ export class PostgresStorage implements IStorage {
       };
     } catch (err: any) {
       if (err?.code === "42P01") {
-        // app_state table not migrated yet; keep app operational with file fallback.
-        return loadSharedState();
+        throw new Error("Tabela app_state não encontrada. Execute as migrations antes de iniciar o servidor.");
       }
       throw err;
     }
@@ -395,21 +394,20 @@ export class PostgresStorage implements IStorage {
       };
     } catch (err: any) {
       if (err?.code === "42P01") {
-        saveSharedState(next);
-        return next;
+        throw new Error("Tabela app_state não encontrada. Execute as migrations antes de iniciar o servidor.");
       }
       throw err;
     }
   }
 }
 
-export const pool = process.env.DATABASE_URL
-  ? new Pool({ connectionString: process.env.DATABASE_URL })
-  : undefined;
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL obrigatório: persistência em memória foi desativada para proteger dados de produção.");
+}
 
-export const storage: IStorage = pool
-  ? new PostgresStorage(pool)
-  : new MemStorage();
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+export const storage: IStorage = new PostgresStorage(pool);
 
 export async function ensureAdminUser(
   username: string,

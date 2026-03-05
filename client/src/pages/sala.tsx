@@ -49,29 +49,23 @@ export default function Sala() {
     return "service";
   };
 
-  const getCustomMomentLabel = (menuConfig: Menu | undefined, step: number, total: number, displayTotal: number) => {
-    if (!menuConfig?.customGroupingEnabled || !menuConfig.customGroupingRules) return null;
-    if ((displayTotal === 9 || displayTotal === 11) && (step === 1 || step === total - 1)) return null;
-    const rules = menuConfig.customGroupingRules
-      .split(";")
-      .map((r) => r.trim())
-      .filter(Boolean);
-    for (const rule of rules) {
-      const [left, right] = rule.split("=").map((v) => v?.trim());
-      const stepNum = Number(left);
-      if (!Number.isFinite(stepNum) || !right) continue;
-      if (stepNum === step) return right.replace(/^M/i, "");
-    }
-    return null;
+  const buildRangeLabel = (start: number, end: number) => {
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i).join("&");
+  };
+
+  const getCustomMomentLabel = (menuConfig: Menu | undefined, step: number) => {
+    if (!menuConfig?.customGroupingEnabled || !Array.isArray(menuConfig.customGroupingRanges)) return null;
+    const match = menuConfig.customGroupingRanges.find((r) => step >= r.start && step <= r.end);
+    if (!match) return null;
+    return buildRangeLabel(match.start, match.end);
   };
 
   const getMomentDisplay = (moment: number, total: number, displayTotal: number, menuConfig?: Menu) => {
     if (moment === 0) return "0";
-    const custom = getCustomMomentLabel(menuConfig, moment, total, displayTotal);
+    const custom = getCustomMomentLabel(menuConfig, moment);
     if (custom) return custom;
-    if (moment === 1) return "1&2";
-    if (moment === total - 1) return `${displayTotal - 1}&${displayTotal}`;
-    return moment + 1;
+    if (moment > displayTotal) return displayTotal;
+    return moment;
   };
 
   const getLanguageBadge = (language: string | null) => {
@@ -153,8 +147,7 @@ export default function Sala() {
       }
     }
 
-    const actualSteps = selectedTable.totalMoments - 2;
-    if (selectedTable.currentMoment >= actualSteps + 1) {
+    if (selectedTable.currentMoment >= selectedTable.totalMoments) {
       updateTable(selectedTable.id, {
         status: "finished",
         lastMomentTime: now,

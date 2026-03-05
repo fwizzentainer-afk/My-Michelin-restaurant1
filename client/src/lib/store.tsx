@@ -39,10 +39,8 @@ export interface Menu {
   moments: string[];
   isActive: boolean;
   displayTotalMoments: number;
-  combineFirstTwoMoments: boolean;
-  combineLastTwoMoments: boolean;
   customGroupingEnabled: boolean;
-  customGroupingRules: string;
+  customGroupingRanges: Array<{ start: number; end: number }>;
 }
 
 export interface HistoricalService {
@@ -113,31 +111,6 @@ const defaultTables: Table[] = tableNumbers.map((num) => ({
   restrictions: { type: null, description: '' }
 }));
 
-const defaultMenus: Menu[] = [
-  {
-    id: 'm1',
-    name: 'Menu 9 momentos',
-    moments: ['Crocante de sementes & coalhada', 'Moluscos', 'Peixe', 'Verão', 'Carne', 'Arroz con leche', 'Bolo de milho & rosquilha de chocolate'],
-    isActive: true,
-    displayTotalMoments: 9,
-    combineFirstTwoMoments: true,
-    combineLastTwoMoments: true,
-    customGroupingEnabled: false,
-    customGroupingRules: "",
-  },
-  {
-    id: 'm2',
-    name: 'Menu 11 momentos',
-    moments: ['Crocante de sementes & coalhada', 'Moluscos', 'Lagostim', 'Peixe', 'Verão', 'Carne', 'Texturas de abóbora', 'Arroz con leche', 'Bolo de milho & rosquilha de chocolate'],
-    isActive: true,
-    displayTotalMoments: 11,
-    combineFirstTwoMoments: true,
-    combineLastTwoMoments: true,
-    customGroupingEnabled: false,
-    customGroupingRules: "",
-  },
-];
-
 const defaultPairings = ['Essencial', 'Gastronômico', 'À Carta', 'Sem Pearing'];
 const SETTINGS_STORAGE_KEY = "michelin_settings_v1";
 const MENUS_STORAGE_KEY = "michelin_menus_v1";
@@ -153,10 +126,49 @@ const defaultSettings: StoreState["settings"] = {
 const StoreContext = createContext<StoreState | undefined>(undefined);
 const SYNC_CHANNEL = "michelin_sync";
 
-const normalizeMenu = (menu: Partial<Menu> & Pick<Menu, "id" | "name" | "moments" | "isActive">): Menu => {
-  const combineFirstTwoMoments = menu.combineFirstTwoMoments ?? true;
-  const combineLastTwoMoments = menu.combineLastTwoMoments ?? true;
-  const minimumDisplayTotal = menu.moments.length + (combineFirstTwoMoments ? 1 : 0) + (combineLastTwoMoments ? 1 : 0);
+const parseLegacyGroupingRules = (rules: string): Array<{ start: number; end: number }> => {
+  const entries = rules
+    .split(";")
+    .map((r) => r.trim())
+    .filter(Boolean);
+  const parsed: Array<{ start: number; end: number }> = [];
+  for (const entry of entries) {
+    const [_step, value] = entry.split("=").map((v) => v?.trim());
+    if (!value) continue;
+    const nums = value
+      .replace(/^M/i, "")
+      .split("&")
+      .map((n) => Number(n.trim()))
+      .filter((n) => Number.isFinite(n) && n > 0)
+      .sort((a, b) => a - b);
+    if (!nums.length) continue;
+    parsed.push({ start: nums[0], end: nums[nums.length - 1] });
+  }
+  return parsed;
+};
+
+const normalizeRanges = (rawRanges: Array<{ start: number; end: number }>): Array<{ start: number; end: number }> => {
+  return rawRanges
+    .map((r) => ({ start: Math.floor(r.start), end: Math.floor(r.end) }))
+    .filter((r) => Number.isFinite(r.start) && Number.isFinite(r.end) && r.start > 0 && r.end >= r.start)
+    .sort((a, b) => a.start - b.start)
+    .filter((range, index, arr) => {
+      if (index === 0) return true;
+      return range.start > arr[index - 1].end;
+    });
+};
+
+const normalizeMenu = (
+  menu: Partial<Menu> & Pick<Menu, "id" | "name" | "moments" | "isActive"> & { customGroupingRules?: string },
+): Menu => {
+  const rawRanges = Array.isArray(menu.customGroupingRanges)
+    ? menu.customGroupingRanges
+    : menu.customGroupingRules
+    ? parseLegacyGroupingRules(menu.customGroupingRules)
+    : [];
+  const customGroupingRanges = normalizeRanges(rawRanges);
+  const maxRangeEnd = customGroupingRanges.reduce((max, r) => Math.max(max, r.end), 0);
+  const minimumDisplayTotal = Math.max(menu.moments.length, maxRangeEnd);
   const displayTotalMoments =
     typeof menu.displayTotalMoments === "number" && Number.isFinite(menu.displayTotalMoments)
       ? Math.max(Math.floor(menu.displayTotalMoments), minimumDisplayTotal)
@@ -168,10 +180,8 @@ const normalizeMenu = (menu: Partial<Menu> & Pick<Menu, "id" | "name" | "moments
     moments: menu.moments,
     isActive: menu.isActive,
     displayTotalMoments,
-    combineFirstTwoMoments,
-    combineLastTwoMoments,
     customGroupingEnabled: menu.customGroupingEnabled ?? false,
-    customGroupingRules: menu.customGroupingRules ?? "",
+    customGroupingRanges,
   };
 };
 
@@ -209,12 +219,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [menus, setMenus] = useState<Menu[]>(() => {
     try {
       const raw = localStorage.getItem(MENUS_STORAGE_KEY);
-      if (!raw) return defaultMenus;
+      if (!raw) return [];
       const parsed = JSON.parse(raw) as Array<Partial<Menu> & Pick<Menu, "id" | "name" | "moments" | "isActive">>;
-      if (!Array.isArray(parsed) || parsed.length === 0) return defaultMenus;
+      if (!Array.isArray(parsed)) return [];
       return parsed.map(normalizeMenu);
     } catch {
-      return defaultMenus;
+      return [];
     }
   });
   const [historicalLogs, setHistoricalLogs] = useState<HistoricalService[]>(loadLogs);
@@ -386,7 +396,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
         if (cancelled) return;
         if (Array.isArray(payload.tables) && payload.tables.length > 0) setTables(payload.tables);
-        if (Array.isArray(payload.menus) && payload.menus.length > 0) {
+        if (Array.isArray(payload.menus)) {
           const normalizedServerMenus = (payload.menus as Array<Partial<Menu> & Pick<Menu, "id" | "name" | "moments" | "isActive">>).map(normalizeMenu);
           setMenus((prevMenus) => {
             const localMenusJson = JSON.stringify(prevMenus);

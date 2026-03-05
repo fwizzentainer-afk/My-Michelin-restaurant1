@@ -9,7 +9,6 @@ import {
 
 /**
  * Registers all HTTP routes under /api.
- * Uses the in-memory storage; swap it later for a DB implementation.
  */
 export async function registerRoutes(
   httpServer: Server,
@@ -164,6 +163,9 @@ export async function registerRoutes(
       !Array.isArray(body.menus)
     ) {
       return res.status(400).json({ error: "Campo menus inválido" });
+    }
+    if (body.menus !== undefined && req.session.role !== "admin") {
+      return res.status(403).json({ error: "Somente admin pode alterar menus" });
     }
     if (
       body.historicalLogs !== undefined &&

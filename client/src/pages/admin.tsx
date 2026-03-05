@@ -19,17 +19,13 @@ export default function Admin() {
   const [newMenuName, setNewMenuName] = useState("");
   const [newMoments, setNewMoments] = useState<string[]>([""]);
   const [newDisplayTotalMoments, setNewDisplayTotalMoments] = useState(0);
-  const [newCombineFirstTwoMoments, setNewCombineFirstTwoMoments] = useState(true);
-  const [newCombineLastTwoMoments, setNewCombineLastTwoMoments] = useState(true);
   const [newCustomGroupingEnabled, setNewCustomGroupingEnabled] = useState(false);
-  const [newCustomGroupingRules, setNewCustomGroupingRules] = useState("");
+  const [newCustomGroupingRanges, setNewCustomGroupingRanges] = useState<Array<{ start: number; end: number }>>([]);
   const [editingMenuId, setEditingMenuId] = useState<string | null>(null);
   const [editingMoments, setEditingMoments] = useState<string[]>([]);
   const [editingDisplayTotalMoments, setEditingDisplayTotalMoments] = useState(0);
-  const [editingCombineFirstTwoMoments, setEditingCombineFirstTwoMoments] = useState(true);
-  const [editingCombineLastTwoMoments, setEditingCombineLastTwoMoments] = useState(true);
   const [editingCustomGroupingEnabled, setEditingCustomGroupingEnabled] = useState(false);
-  const [editingCustomGroupingRules, setEditingCustomGroupingRules] = useState("");
+  const [editingCustomGroupingRanges, setEditingCustomGroupingRanges] = useState<Array<{ start: number; end: number }>>([]);
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newUserRole, setNewUserRole] = useState<"sala" | "cozinha" | "admin">("sala");
@@ -39,7 +35,10 @@ export default function Admin() {
   const [dateRange, setDateRange] = useState<string>("today"); // 'today', 'week', 'all'
   const [compareMode, setCompareMode] = useState<boolean>(false);
   const [selectedMenuFilter, setSelectedMenuFilter] = useState<string>("all");
-  const newMinimumDisplayTotal = newMoments.length + (newCombineFirstTwoMoments ? 1 : 0) + (newCombineLastTwoMoments ? 1 : 0);
+  const newMaxRange = newCustomGroupingEnabled
+    ? newCustomGroupingRanges.reduce((max, r) => Math.max(max, r.end || 0), 0)
+    : 0;
+  const newMinimumDisplayTotal = Math.max(newMoments.length, newMaxRange);
 
   useEffect(() => {
     setNewDisplayTotalMoments((prev) => Math.max(prev || newMinimumDisplayTotal, newMinimumDisplayTotal));
@@ -245,24 +244,18 @@ export default function Admin() {
       return;
     }
 
-    const forceCombinedEdges = newDisplayTotalMoments === 9 || newDisplayTotalMoments === 11;
-
     createMenu({
       name: newMenuName,
       moments: newMoments,
       isActive: false,
       displayTotalMoments: newDisplayTotalMoments,
-      combineFirstTwoMoments: forceCombinedEdges ? true : newCombineFirstTwoMoments,
-      combineLastTwoMoments: forceCombinedEdges ? true : newCombineLastTwoMoments,
       customGroupingEnabled: newCustomGroupingEnabled,
-      customGroupingRules: newCustomGroupingRules.trim(),
+      customGroupingRanges: newCustomGroupingRanges,
     });
     setNewMenuName("");
     setNewMoments([""]);
-    setNewCombineFirstTwoMoments(true);
-    setNewCombineLastTwoMoments(true);
     setNewCustomGroupingEnabled(false);
-    setNewCustomGroupingRules("");
+    setNewCustomGroupingRanges([]);
     setNewDisplayTotalMoments(0);
     toast({ title: "Sucesso", description: "Menu criado com sucesso" });
   };
@@ -285,20 +278,16 @@ export default function Admin() {
     setEditingMenuId(menu.id);
     setEditingMoments(menu.moments.length ? [...menu.moments] : [""]);
     setEditingDisplayTotalMoments(menu.displayTotalMoments);
-    setEditingCombineFirstTwoMoments(menu.combineFirstTwoMoments);
-    setEditingCombineLastTwoMoments(menu.combineLastTwoMoments);
     setEditingCustomGroupingEnabled(menu.customGroupingEnabled ?? false);
-    setEditingCustomGroupingRules(menu.customGroupingRules ?? "");
+    setEditingCustomGroupingRanges(menu.customGroupingRanges ?? []);
   };
 
   const cancelEditingMenu = () => {
     setEditingMenuId(null);
     setEditingMoments([]);
     setEditingDisplayTotalMoments(0);
-    setEditingCombineFirstTwoMoments(true);
-    setEditingCombineLastTwoMoments(true);
     setEditingCustomGroupingEnabled(false);
-    setEditingCustomGroupingRules("");
+    setEditingCustomGroupingRanges([]);
   };
 
   const updateEditingMoment = (index: number, value: string) => {
@@ -320,9 +309,36 @@ export default function Admin() {
     });
   };
 
+  const addNewGroupingRange = () => {
+    setNewCustomGroupingRanges((prev) => [...prev, { start: 1, end: 2 }]);
+  };
+
+  const updateNewGroupingRange = (index: number, key: "start" | "end", value: number) => {
+    setNewCustomGroupingRanges((prev) => prev.map((r, i) => (i === index ? { ...r, [key]: Math.max(1, Math.floor(value || 1)) } : r)));
+  };
+
+  const removeNewGroupingRange = (index: number) => {
+    setNewCustomGroupingRanges((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addEditingGroupingRange = () => {
+    setEditingCustomGroupingRanges((prev) => [...prev, { start: 1, end: 2 }]);
+  };
+
+  const updateEditingGroupingRange = (index: number, key: "start" | "end", value: number) => {
+    setEditingCustomGroupingRanges((prev) => prev.map((r, i) => (i === index ? { ...r, [key]: Math.max(1, Math.floor(value || 1)) } : r)));
+  };
+
+  const removeEditingGroupingRange = (index: number) => {
+    setEditingCustomGroupingRanges((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const saveEditingMenu = (menu: Menu) => {
     const cleaned = editingMoments.map((m) => m.trim()).filter(Boolean);
-    const editingMinimumDisplayTotal = cleaned.length + (editingCombineFirstTwoMoments ? 1 : 0) + (editingCombineLastTwoMoments ? 1 : 0);
+    const editingMaxRange = editingCustomGroupingEnabled
+      ? editingCustomGroupingRanges.reduce((max, r) => Math.max(max, r.end || 0), 0)
+      : 0;
+    const editingMinimumDisplayTotal = Math.max(cleaned.length, editingMaxRange);
     if (!cleaned.length) {
       toast({
         title: "Menu inválido",
@@ -341,15 +357,11 @@ export default function Admin() {
       return;
     }
 
-    const forceCombinedEdges = editingDisplayTotalMoments === 9 || editingDisplayTotalMoments === 11;
-
     updateMenu(menu.id, {
       moments: cleaned,
       displayTotalMoments: editingDisplayTotalMoments,
-      combineFirstTwoMoments: forceCombinedEdges ? true : editingCombineFirstTwoMoments,
-      combineLastTwoMoments: forceCombinedEdges ? true : editingCombineLastTwoMoments,
       customGroupingEnabled: editingCustomGroupingEnabled,
-      customGroupingRules: editingCustomGroupingRules.trim(),
+      customGroupingRanges: editingCustomGroupingRanges,
     });
     toast({ title: "Menu atualizado", description: `${menu.name} foi atualizado com sucesso.` });
     cancelEditingMenu();
@@ -731,10 +743,7 @@ export default function Admin() {
                     </p>
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       <Badge variant="outline" className="text-[10px]">
-                        1º e 2º: {menu.combineFirstTwoMoments ? "Juntos" : "Separados"}
-                      </Badge>
-                      <Badge variant="outline" className="text-[10px]">
-                        Final: {menu.combineLastTwoMoments ? "Juntos" : "Separados"}
+                        Grupos custom: {menu.customGroupingRanges?.length ?? 0}
                       </Badge>
                       <Badge variant="outline" className="text-[10px]">
                         Agrupamento custom: {menu.customGroupingEnabled ? "ON" : "OFF"}
@@ -765,30 +774,21 @@ export default function Admin() {
                           <Plus className="w-4 h-4 mr-2" />
                           Adicionar Momento
                         </Button>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-border/30">
-                          <div className="space-y-1 sm:col-span-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-1 gap-2 pt-2 border-t border-border/30">
+                          <div className="space-y-1">
                             <Label className="text-[10px] uppercase tracking-[2px] text-muted-foreground">Total real</Label>
                             <Input
                               type="number"
-                              min={editingMoments.length}
+                              min={Math.max(
+                                editingMoments.length,
+                                editingCustomGroupingEnabled
+                                  ? editingCustomGroupingRanges.reduce((max, r) => Math.max(max, r.end || 0), 0)
+                                  : 0,
+                              )}
                               value={editingDisplayTotalMoments}
                               onChange={(e) => setEditingDisplayTotalMoments(Math.max(0, Number(e.target.value) || 0))}
                               className="h-8 bg-background"
                             />
-                          </div>
-                          <div className="space-y-1 sm:col-span-1">
-                            <Label className="text-[10px] uppercase tracking-[2px] text-muted-foreground">1º e 2º</Label>
-                            <div className="grid grid-cols-2 gap-1">
-                              <Button type="button" size="sm" variant={editingCombineFirstTwoMoments ? "default" : "outline"} onClick={() => setEditingCombineFirstTwoMoments(true)}>Juntos</Button>
-                              <Button type="button" size="sm" variant={!editingCombineFirstTwoMoments ? "default" : "outline"} onClick={() => setEditingCombineFirstTwoMoments(false)}>Separados</Button>
-                            </div>
-                          </div>
-                          <div className="space-y-1 sm:col-span-1">
-                            <Label className="text-[10px] uppercase tracking-[2px] text-muted-foreground">Penúltimo e último</Label>
-                            <div className="grid grid-cols-2 gap-1">
-                              <Button type="button" size="sm" variant={editingCombineLastTwoMoments ? "default" : "outline"} onClick={() => setEditingCombineLastTwoMoments(true)}>Juntos</Button>
-                              <Button type="button" size="sm" variant={!editingCombineLastTwoMoments ? "default" : "outline"} onClick={() => setEditingCombineLastTwoMoments(false)}>Separados</Button>
-                            </div>
                           </div>
                         </div>
                         <div className="space-y-2 rounded-md border border-border/50 p-2">
@@ -797,12 +797,35 @@ export default function Admin() {
                             <Switch checked={editingCustomGroupingEnabled} onCheckedChange={setEditingCustomGroupingEnabled} />
                           </div>
                           {editingCustomGroupingEnabled && (
-                            <Input
-                              value={editingCustomGroupingRules}
-                              onChange={(e) => setEditingCustomGroupingRules(e.target.value)}
-                              placeholder="Ex: 1=1&3; 2=2; 3=4&5"
-                              className="h-8 bg-background"
-                            />
+                            <div className="space-y-2">
+                              {editingCustomGroupingRanges.map((range, idx) => (
+                                <div key={`edit-range-${idx}`} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={range.start}
+                                    onChange={(e) => updateEditingGroupingRange(idx, "start", Number(e.target.value))}
+                                    className="h-8 bg-background"
+                                    placeholder="start"
+                                  />
+                                  <Input
+                                    type="number"
+                                    min={range.start}
+                                    value={range.end}
+                                    onChange={(e) => updateEditingGroupingRange(idx, "end", Number(e.target.value))}
+                                    className="h-8 bg-background"
+                                    placeholder="end"
+                                  />
+                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeEditingGroupingRange(idx)}>
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                              <Button type="button" variant="outline" size="sm" className="w-full" onClick={addEditingGroupingRange}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Adicionar Grupo (start/end)
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -912,8 +935,8 @@ export default function Admin() {
                   <Button variant="outline" size="sm" className="w-full border-dashed border-border/60 mt-2" onClick={handleAddMoment}>
                     <Plus className="w-4 h-4 mr-2" /> Adicionar Momento
                   </Button>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-border/30">
-                    <div className="space-y-1 sm:col-span-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-1 gap-2 pt-2 border-t border-border/30">
+                    <div className="space-y-1">
                       <Label className="text-[10px] uppercase tracking-[2px] text-muted-foreground">Total real</Label>
                       <Input
                         type="number"
@@ -923,20 +946,6 @@ export default function Admin() {
                         className="bg-background border-border/60 h-9"
                       />
                     </div>
-                    <div className="space-y-1 sm:col-span-1">
-                      <Label className="text-[10px] uppercase tracking-[2px] text-muted-foreground">1º e 2º</Label>
-                      <div className="grid grid-cols-2 gap-1">
-                        <Button type="button" size="sm" variant={newCombineFirstTwoMoments ? "default" : "outline"} onClick={() => setNewCombineFirstTwoMoments(true)}>Juntos</Button>
-                        <Button type="button" size="sm" variant={!newCombineFirstTwoMoments ? "default" : "outline"} onClick={() => setNewCombineFirstTwoMoments(false)}>Separados</Button>
-                      </div>
-                    </div>
-                    <div className="space-y-1 sm:col-span-1">
-                      <Label className="text-[10px] uppercase tracking-[2px] text-muted-foreground">Penúltimo e último</Label>
-                      <div className="grid grid-cols-2 gap-1">
-                        <Button type="button" size="sm" variant={newCombineLastTwoMoments ? "default" : "outline"} onClick={() => setNewCombineLastTwoMoments(true)}>Juntos</Button>
-                        <Button type="button" size="sm" variant={!newCombineLastTwoMoments ? "default" : "outline"} onClick={() => setNewCombineLastTwoMoments(false)}>Separados</Button>
-                      </div>
-                    </div>
                   </div>
                   <div className="space-y-2 rounded-md border border-border/50 p-2">
                     <div className="flex items-center justify-between">
@@ -944,12 +953,35 @@ export default function Admin() {
                       <Switch checked={newCustomGroupingEnabled} onCheckedChange={setNewCustomGroupingEnabled} />
                     </div>
                     {newCustomGroupingEnabled && (
-                      <Input
-                        value={newCustomGroupingRules}
-                        onChange={(e) => setNewCustomGroupingRules(e.target.value)}
-                        placeholder="Ex: 1=1&3; 2=2; 3=4&5"
-                        className="bg-background border-border/60 h-9"
-                      />
+                      <div className="space-y-2">
+                        {newCustomGroupingRanges.map((range, idx) => (
+                          <div key={`new-range-${idx}`} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
+                            <Input
+                              type="number"
+                              min={1}
+                              value={range.start}
+                              onChange={(e) => updateNewGroupingRange(idx, "start", Number(e.target.value))}
+                              className="bg-background border-border/60 h-9"
+                              placeholder="start"
+                            />
+                            <Input
+                              type="number"
+                              min={range.start}
+                              value={range.end}
+                              onChange={(e) => updateNewGroupingRange(idx, "end", Number(e.target.value))}
+                              className="bg-background border-border/60 h-9"
+                              placeholder="end"
+                            />
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeNewGroupingRange(idx)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button type="button" variant="outline" size="sm" className="w-full" onClick={addNewGroupingRange}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Adicionar Grupo (start/end)
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
