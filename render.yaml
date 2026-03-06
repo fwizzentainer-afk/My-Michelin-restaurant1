@@ -26,6 +26,6 @@ services:
 
 databases:
   - name: my-michelin-db
-    plan: starter
+    plan: basic-256mb
     databaseName: michelin
     user: michelin

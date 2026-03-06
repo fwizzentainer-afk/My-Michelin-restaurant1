@@ -401,13 +401,20 @@ export class PostgresStorage implements IStorage {
   }
 }
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL obrigatório: persistência em memória foi desativada para proteger dados de produção.");
-}
+const databaseUrl = process.env.DATABASE_URL;
+const isProduction = process.env.NODE_ENV === "production";
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const pool = databaseUrl ? new Pool({ connectionString: databaseUrl }) : null;
 
-export const storage: IStorage = new PostgresStorage(pool);
+export const storage: IStorage = pool
+  ? new PostgresStorage(pool)
+  : (() => {
+      if (isProduction) {
+        throw new Error("DATABASE_URL obrigatório em produção.");
+      }
+      console.warn("DATABASE_URL ausente: usando persistência local em memória no ambiente de desenvolvimento.");
+      return new MemStorage();
+    })();
 
 export async function ensureAdminUser(
   username: string,

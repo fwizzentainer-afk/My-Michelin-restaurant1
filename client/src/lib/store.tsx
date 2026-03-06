@@ -397,7 +397,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }>;
 
         if (cancelled) return;
-        if (Array.isArray(payload.tables) && payload.tables.length > 0) setTables(payload.tables);
+        if (Array.isArray(payload.tables)) setTables(payload.tables);
         if (Array.isArray(payload.menus)) {
           const normalizedServerMenus = (payload.menus as Array<Partial<Menu> & Pick<Menu, "id" | "name" | "moments" | "isActive">>).map(normalizeMenu);
           setMenus((prevMenus) => {

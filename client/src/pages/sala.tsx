@@ -201,8 +201,21 @@ export default function Sala() {
 
   const handlePause = () => {
     if (!selectedTable) return;
+    if (selectedTable.status === "paused") {
+      const currentLog = selectedTable.momentsHistory.find(
+        (h) => h.momentNumber === selectedTable.currentMoment,
+      );
+      const resumedStatus =
+        selectedTable.currentMoment > 0
+          ? currentLog?.readyTime && !currentLog.finishTime
+            ? "ready"
+            : "preparing"
+          : "idle";
+      updateTable(selectedTable.id, { status: resumedStatus });
+      return;
+    }
     updateTable(selectedTable.id, {
-      status: selectedTable.status === 'paused' ? 'idle' : 'paused'
+      status: "paused",
     });
   };
 

@@ -17,6 +17,7 @@ O caminho com menos ajuste é Render com 1 Web Service stateful + 1 banco Postgr
 O `render.yaml` já está pronto para criar:
 - 1 Web Service (`my-michelin-web`)
 - 1 Postgres (`my-michelin-db`)
+  - usando plano de Postgres compatível com as regras atuais do Render (`basic-256mb`)
 
 Ele já liga `DATABASE_URL` automaticamente no app e gera `SESSION_SECRET`.
 Você só precisa preencher manualmente:
