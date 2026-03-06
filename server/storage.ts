@@ -425,3 +425,104 @@ export async function ensureAdminUser(
   if (existing) return existing;
   return storage.createUser({ username, password, role });
 }
+
+export async function runMigrationsIfNeeded() {
+  const shouldRunMigrations = process.env.RUN_MIGRATIONS === "true";
+  if (!shouldRunMigrations) return;
+
+  if (!pool) {
+    throw new Error("RUN_MIGRATIONS=true mas DATABASE_URL não está definido.");
+  }
+
+  console.log("RUN_MIGRATIONS habilitado: aplicando migrations...");
+  await pool.query(`
+    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+    CREATE TABLE IF NOT EXISTS "users" (
+      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      "username" text NOT NULL UNIQUE,
+      "password" text NOT NULL,
+      "role" text NOT NULL DEFAULT 'sala'
+    );
+
+    CREATE TABLE IF NOT EXISTS "menus" (
+      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      "name" text NOT NULL,
+      "moments" jsonb NOT NULL,
+      "is_active" boolean NOT NULL DEFAULT true
+    );
+
+    CREATE TABLE IF NOT EXISTS "tables" (
+      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      "number" text NOT NULL UNIQUE,
+      "menu_id" uuid REFERENCES "menus"("id") ON DELETE SET NULL,
+      "pairing" text,
+      "pax" integer,
+      "language" text,
+      "status" text NOT NULL DEFAULT 'idle',
+      "current_moment" integer NOT NULL DEFAULT 0,
+      "total_moments" integer NOT NULL DEFAULT 0,
+      "start_time" timestamp with time zone,
+      "last_moment_time" timestamp with time zone,
+      "restrictions" jsonb,
+      "updated_at" timestamp with time zone NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS "historical_services" (
+      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      "table_number" text NOT NULL,
+      "menu_name" text,
+      "pairing" text,
+      "start_time" timestamp with time zone NOT NULL,
+      "end_time" timestamp with time zone,
+      "moments_history" jsonb
+    );
+
+    CREATE TABLE IF NOT EXISTS "app_state" (
+      "key" text PRIMARY KEY,
+      "tables" jsonb NOT NULL DEFAULT '[]'::jsonb,
+      "menus" jsonb NOT NULL DEFAULT '[]'::jsonb,
+      "historical_logs" jsonb NOT NULL DEFAULT '[]'::jsonb,
+      "updated_at" timestamp with time zone NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS "session" (
+      "sid" varchar NOT NULL PRIMARY KEY,
+      "sess" json NOT NULL,
+      "expire" timestamp(6) NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+  `);
+
+  const migrationsFolder = path.resolve(process.cwd(), "migrations");
+  if (fs.existsSync(migrationsFolder)) {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "_app_sql_migrations" (
+        "id" text PRIMARY KEY,
+        "applied_at" timestamp with time zone NOT NULL DEFAULT now()
+      );
+    `);
+
+    const migrationFiles = fs
+      .readdirSync(migrationsFolder)
+      .filter((name) => name.endsWith(".sql"))
+      .sort((a, b) => a.localeCompare(b));
+
+    for (const fileName of migrationFiles) {
+      const alreadyApplied = await pool.query(
+        `SELECT 1 FROM "_app_sql_migrations" WHERE "id" = $1 LIMIT 1`,
+        [fileName],
+      );
+      if (alreadyApplied.rowCount) continue;
+
+      const sql = fs.readFileSync(path.join(migrationsFolder, fileName), "utf-8");
+      if (sql.trim()) {
+        await pool.query(sql);
+      }
+      await pool.query(`INSERT INTO "_app_sql_migrations" ("id") VALUES ($1)`, [fileName]);
+    }
+  }
+
+  console.log("Migrations aplicadas com sucesso.");
+}

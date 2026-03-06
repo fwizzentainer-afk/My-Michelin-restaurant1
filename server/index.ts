@@ -8,7 +8,7 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import memorystore from "memorystore";
 import cors from "cors";
-import { ensureAdminUser, pool } from "./storage";
+import { ensureAdminUser, pool, runMigrationsIfNeeded } from "./storage";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -206,6 +206,8 @@ async function startServer() {
   serverStarted = true;
 
   try {
+    await runMigrationsIfNeeded();
+
     // Ensure default admin exists when credentials are provided
     if (process.env.ADMIN_PASSWORD) {
       await ensureAdminUser(
